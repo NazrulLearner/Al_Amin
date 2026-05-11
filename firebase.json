@@ -1,0 +1,57 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "members": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$memberId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "contributions": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "collector_balances": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "deposits": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "somity_settings": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "audit_logs": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  },
+  "database": {
+    "rules": "database.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
+}

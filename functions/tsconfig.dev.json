@@ -1,0 +1,6 @@
+// functions/tsconfig.dev.json
+{
+  "include": [
+    ".eslintrc.js"
+  ]
+}
