@@ -24,14 +24,10 @@ import {
   generateReceiptId,
 } from '../../../utils/calculations/contributionCalculator';
 
-// Re-export for backward compatibility
 export { memberDueService } from './memberDueService';
 export { summaryService } from './summaryService';
 
 export const feesService = {
-  /**
-   * Add a fee payment
-   */
   async addFeePayment(
     request: FeePaymentRequest & {
       receiptId?: string;
@@ -46,6 +42,10 @@ export const feesService = {
       collectorId?: string;
       collectorName?: string;
       collectorMemberId?: string;
+      depositDate?: string;
+      depositorName?: string;
+      depositorId?: string;
+      paymentDate?: string;
     }
   ): Promise<{ receiptId: string; transactionId: string }> {
     try {
@@ -56,41 +56,23 @@ export const feesService = {
       const paymentDate = request.paymentDate ? new Date(request.paymentDate) : createdAt;
       const depositDate = request.depositDate ? new Date(request.depositDate) : null;
 
-      // 🧮 Sort months
       const sortedMonths = sortMonths(request.months) as typeof request.months;
 
-      // ✅ DUPLICATE PROTECTION: Check for already paid months
+      // ✅ Duplicate check using memberId
       const transactionsRef = collections.contributions();
-      const legacyExistingQuery = query(
+      const existingQuery = query(
         transactionsRef,
         where('memberId', '==', request.memberId),
         where('status', '==', 'paid')
       );
-      const nestedExistingQuery = query(
-        transactionsRef,
-        where('member.id', '==', request.memberId),
-        where('status', '==', 'paid')
-      );
-      const [legacySnapshot, nestedSnapshot] = await Promise.all([
-        getDocs(legacyExistingQuery),
-        getDocs(nestedExistingQuery),
-      ]);
+      const existingSnapshot = await getDocs(existingQuery);
+      
       const existingPaidMonths: { month: string; year: number }[] = [];
-
-      const collectPaidMonths = (data: any) => {
+      existingSnapshot.forEach(doc => {
+        const data = doc.data();
         if (data.paidMonthsDetails && Array.isArray(data.paidMonthsDetails)) {
           existingPaidMonths.push(...data.paidMonthsDetails);
         }
-      };
-
-      legacySnapshot.forEach(doc => {
-        const data = doc.data();
-        collectPaidMonths(data);
-      });
-
-      nestedSnapshot.forEach(doc => {
-        const data = doc.data();
-        collectPaidMonths(data);
       });
 
       const existingSet = new Set(
@@ -109,144 +91,108 @@ export const feesService = {
 
       const firstMonth = sortedMonths[0];
       const lastMonth = sortedMonths[sortedMonths.length - 1];
-
       const transactionRef = doc(transactionsRef);
 
-      // ✅ Cleaner payment period
       const paymentPeriod = sortedMonths.length === 1
         ? `${firstMonth.month} ${firstMonth.year}`
         : `${firstMonth.month} ${firstMonth.year} - ${lastMonth.month} ${lastMonth.year}`;
 
+      // ============================================
+      // 📦 COMPLETE FLAT STRUCTURE - ROOT LEVEL FIELDS
+      // ============================================
+      
       const transactionData = {
+        // --- Basic Info ---
+        amount: request.totalAmount,
+        feeAmount: request.totalAmount,
+        balanceDue: 0,
+        
+        // --- Status ---
+        collectionStatus: request.collectionStatus || 'collected',
+        status: 'paid',
+        payType: request.paymentType,
+        feeType: sortedMonths.length > 1 ? 'multiple' : 'monthly',
+        isAdvancePayment: false,
+        isPartialPayment: false,
+        
+        // --- Remarks ---
+        remarks: request.remarks || null,
+        
+        // --- Dates ---
+        createdAt,
+        updatedAt: null,
+        paymentDate,
+        paymentPeriod,
+        
+        // --- Receipt ---
         receiptId: finalReceiptId,
         receiptFooter: request.receiptFooter || '',
+        referenceNo: request.referenceNo || null,
+        transferReference: null,
+        
+        // ============================================
+        // 👤 MEMBER INFO (Flat - Root Level)
+        // ============================================
         memberId: request.memberId,
         memberName: request.memberName,
-        member: {
-          id: request.memberId,
-          name: request.memberName,
-        },
-        feeAmount: request.totalAmount,
-        amount: request.totalAmount,
-        month: `${firstMonth.month} ${firstMonth.year}`,
-        isPartialPayment: false,
-        balanceDue: 0,
-        paymentDate: now.toDate(),
-        payType: request.paymentType,
-        payment: {
-          method: request.paymentType,
-          referenceNo: request.referenceNo || null,
-        },
-        referenceNo: request.referenceNo || null,
-        feeType: sortedMonths.length > 1 ? 'multiple' : 'monthly',
+        memberShare: request.memberShare || 0,
+        
+        // ============================================
+        // 👥 COLLECTOR INFO (Flat - Root Level)
+        // ============================================
+        collectorId: request.collectorId || null,
+        collectorMemberId: request.collectorMemberId || null,
+        collectorName: request.collectorName || null,
+        
+        // ============================================
+        // ⌨️ ENTERED BY (Flat - Root Level)
+        // ============================================
+        enteredById: request.enteredById || 'system',
+        enteredByMemberId: request.enteredByMemberId || 'SYS',
+        enteredByName: request.enteredByName || 'System',
+        
+        // ============================================
+        // 💳 PAYMENT METHOD (Flat - Root Level)
+        // ============================================
+        paymentMethod: request.paymentType,
+        paymentReferenceNo: request.referenceNo || null,
+        
+        // ============================================
+        // 🏦 DEPOSIT INFO (Flat - Root Level)
+        // ============================================
+        depositBankName: request.bankName || null,
+        depositDate: depositDate,
+        depositorName: request.depositorName || null,
+        depositorId: request.depositorId || null,
+        depositReference: request.bankReference || null,
+        depositStatus: request.collectionStatus === 'deposited' ? 'deposited' : 'pending',
+        
+        // ============================================
+        // 📅 MONTH RANGE (Flat - Root Level)
+        // ============================================
         feeMonthFrom: firstMonth.month,
-        feeYearFrom: firstMonth.year,
-        monthsPaid: sortedMonths.length,
         feeMonthTo: lastMonth.month,
+        feeYearFrom: firstMonth.year,
         feeYearTo: lastMonth.year,
-        paymentPeriod, // ✅ Cleaner format
+        
+        // ============================================
+        // 📊 MONTH DETAILS (Flat - Root Level)
+        // ============================================
+        month: `${firstMonth.month} ${firstMonth.year}`,
+        monthsPaid: sortedMonths.length,
+        
+        // ============================================
+        // 📋 PAID MONTHS ARRAYS (Flat - Root Level)
+        // ============================================
         paidMonths: sortedMonths.map(m => m.month),
         paidYears: [...new Set(sortedMonths.map(m => m.year))],
         paidMonthsDetails: sortedMonths,
         advanceMonths: [],
-        isAdvancePayment: false,
-        collectionStatus: request.collectionStatus || 'collected',
-        collectedBy: request.collectorName || 'System',
-        collectedById: request.collectorId || 'system',
-        collectedByInfo: {
-          id: request.collectorId || 'system',
-          name: request.collectorName || 'System',
-          memberId: request.collectorMemberId || 'SYS',
-        },
-        collectedAt: now.toDate(),
-        deposit: {
-          status: request.collectionStatus === 'deposited' ? 'deposited' : 'pending',
-          method: request.bankName || null,
-          reference: request.bankReference || null,
-        },
-        depositedBy: request.collectionStatus === 'deposited' ? request.collectorName : null,
-        depositedAt: request.collectionStatus === 'deposited' ? now.toDate() : null,
-        depositedTo: request.bankName || null,
-        transferReference: request.bankReference || null,
-        
-        // ✅ Separate collector and enteredBy for future multi-collector support
-        collector: {
-          id: request.collectorId || null,
-          name: request.collectorName || null,
-          memberId: request.collectorMemberId || null,
-        },
-        enteredBy: {
-          id: request.enteredById || 'system',
-          name: request.enteredByName || 'System',
-          memberId: request.enteredByMemberId || 'SYS',
-        },
-        
-        // Legacy fields for backward compatibility
-        collectorId: request.collectorId || null,
-        collectorName: request.collectorName || null,
-        collectorMemberId: request.collectorMemberId || null,
-        enteredById: request.enteredById || 'system',
-        enteredByName: request.enteredByName || 'System',
-        enteredByMemberId: request.enteredByMemberId || 'SYS',
-        
-        status: 'paid',
-        createdAt: now.toDate(),
-        createdBy: request.enteredById || 'system',
-        remarks: request.remarks || null,
-        updatedAt: null,
       };
-
-      Object.assign(transactionData, {
-        member: {
-          id: request.memberId,
-          name: request.memberName,
-          share: request.memberShare || 0,
-        },
-        collector: {
-          id: request.collectorId || null,
-          memberId: request.collectorMemberId || null,
-          name: request.collectorName || null,
-        },
-        enteredBy: {
-          id: request.enteredById || 'system',
-          memberId: request.enteredByMemberId || 'SYS',
-          name: request.enteredByName || 'System',
-        },
-        paymentDate,
-        createdAt,
-        deposit: {
-          bankName: request.bankName || null,
-          depositDate,
-          depositorName: request.depositorName || null,
-          depositorId: request.depositorId || null,
-          reference: request.bankReference || null,
-          status: request.collectionStatus === 'deposited' ? 'deposited' : 'pending',
-        },
-      });
-
-      [
-        'receiptFooter',
-        'memberId',
-        'memberName',
-        'collectedBy',
-        'collectedById',
-        'collectedByInfo',
-        'collectedAt',
-        'depositedBy',
-        'depositedAt',
-        'depositedTo',
-        'collectorId',
-        'collectorName',
-        'collectorMemberId',
-        'enteredById',
-        'enteredByName',
-        'enteredByMemberId',
-        'createdBy',
-      ].forEach(field => delete (transactionData as any)[field]);
 
       await setDoc(transactionRef, transactionData);
 
-      // ✅ Use increment() for atomic update
+      // ✅ Update member financials
       const memberRef = collections.member(request.memberId);
       await updateDoc(memberRef, {
         'financials.totalFeesPaid': increment(request.totalAmount),
@@ -264,9 +210,6 @@ export const feesService = {
     }
   },
 
-  /**
-   * Get all transactions
-   */
   async getAllTransactions(limitCount: number = 100): Promise<FeeTransaction[]> {
     try {
       const transactionsRef = collections.contributions();
@@ -277,23 +220,8 @@ export const feesService = {
       snapshot.forEach(doc => {
         const data = doc.data();
         transactions.push({
-          ...data,
           id: doc.id,
-          memberId: data.memberId || data.member?.id || '',
-          memberName: data.memberName || data.member?.name || '',
-          bankName: data.bankName || data.deposit?.bankName || '',
-          bankReference: data.bankReference || data.deposit?.reference || '',
-          enteredById: data.enteredById || data.enteredBy?.id || '',
-          enteredByName: data.enteredByName || data.enteredBy?.name || '',
-          enteredByMemberId: data.enteredByMemberId || data.enteredBy?.memberId || '',
-          collectorName: data.collectorName || data.collector?.name || '',
-          paymentDate: data.paymentDate?.toDate?.() || data.paymentDate,
-          deposit: data.deposit ? {
-            ...data.deposit,
-            depositDate: data.deposit.depositDate?.toDate?.() || data.deposit.depositDate,
-          } : data.deposit,
-          createdAt: data.createdAt?.toDate?.() || data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.() || null,
+          ...data,
         } as FeeTransaction);
       });
 
@@ -304,9 +232,6 @@ export const feesService = {
     }
   },
 
-  /**
-   * Delete a transaction
-   */
   async deleteTransaction(transactionId: string, memberId: string, amount: number): Promise<void> {
     try {
       const batch = writeBatch(db);
@@ -314,7 +239,6 @@ export const feesService = {
       batch.delete(transactionRef);
 
       const memberRef = collections.member(memberId);
-      // ✅ Use increment() for atomic update
       batch.update(memberRef, {
         'financials.totalFeesPaid': increment(-amount),
         updatedAt: new Date(),
@@ -328,9 +252,6 @@ export const feesService = {
     }
   },
 
-  /**
-   * Update a transaction
-   */
   async updateTransaction(
     transactionId: string,
     updates: { remarks?: string; referenceNo?: string }

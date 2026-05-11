@@ -9,16 +9,25 @@
       "minimum": 1000,
       "description": "পণ্যের মূল্য"
     },
+    "profitInputType": {
+      "type": "string",
+      "enum": ["rate", "amount"],
+      "description": "Profit input type"
+    },
     "profitRate": {
       "type": "number",
       "minimum": 0,
-      "maximum": 100,
       "description": "বার্ষিক লাভের হার (%)"
     },
     "durationMonths": {
       "type": "integer",
       "minimum": 3,
       "maximum": 60
+    },
+    "profitAmount": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Profit amount"
     },
     "purpose": {
       "type": "string",

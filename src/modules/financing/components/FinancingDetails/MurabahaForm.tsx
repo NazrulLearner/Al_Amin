@@ -21,6 +21,7 @@ const MurabahaForm: React.FC<MurabahaFormProps> = ({ onSubmit, onBack, initialDa
 
   const [formData, setFormData] = useState({
     assetCost: initialData?.assetCost || '',
+    profitInputType: initialData?.profitInputType || 'rate',
     profitRate: initialData?.profitRate || defaultProfitRate,
     durationMonths: initialData?.durationMonths || 12,
     purpose: initialData?.purpose || '',
@@ -33,10 +34,12 @@ const MurabahaForm: React.FC<MurabahaFormProps> = ({ onSubmit, onBack, initialDa
 
   const calculateTotals = () => {
     const assetCost = Number(formData.assetCost);
-    const profitRate = Number(formData.profitRate);
+    const profitValue = Number(formData.profitRate);
     const duration = Number(formData.durationMonths);
-    if (!assetCost || !profitRate || !duration) return { profitAmount: 0, totalPayable: 0, monthlyInstallment: 0 };
-    const profitAmount = (assetCost * profitRate * duration) / 1200;
+    if (!assetCost || !profitValue || !duration) return { profitAmount: 0, totalPayable: 0, monthlyInstallment: 0 };
+    const profitAmount = formData.profitInputType === 'amount'
+      ? profitValue
+      : (assetCost * profitValue * duration) / 1200;
     const totalPayable = assetCost + profitAmount;
     const monthlyInstallment = totalPayable / duration;
     return { profitAmount, totalPayable, monthlyInstallment };
@@ -62,7 +65,7 @@ const MurabahaForm: React.FC<MurabahaFormProps> = ({ onSubmit, onBack, initialDa
     if (!formData.assetCost) newErrors.assetCost = 'Asset cost is required';
     else if (Number(formData.assetCost) < minAmount) newErrors.assetCost = `Minimum ${minAmount} BDT`;
     else if (Number(formData.assetCost) > maxAmount) newErrors.assetCost = `Maximum ${maxAmount} BDT`;
-    if (!formData.profitRate) newErrors.profitRate = 'Profit rate is required';
+    if (!formData.profitRate) newErrors.profitRate = formData.profitInputType === 'amount' ? 'Profit amount is required' : 'Profit rate is required';
     if (!formData.durationMonths) newErrors.durationMonths = 'Duration is required';
     if (!formData.purpose) newErrors.purpose = 'Purpose is required';
     if (!formData.assetName) newErrors.assetName = 'Asset name is required';
@@ -91,11 +94,30 @@ const MurabahaForm: React.FC<MurabahaFormProps> = ({ onSubmit, onBack, initialDa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Profit Rate (%) *</label>
+            <div className="flex items-center justify-between mb-1 gap-3">
+              <label className="block text-sm font-medium text-gray-700">
+                {formData.profitInputType === 'amount' ? 'Profit Amount (BDT) *' : 'Profit Rate (%) *'}
+              </label>
+              <select
+                value={formData.profitInputType}
+                onChange={(e) => setFormData(prev => ({ ...prev, profitInputType: e.target.value, profitRate: e.target.value === 'rate' ? defaultProfitRate : '' }))}
+                className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white"
+              >
+                <option value="rate">Rate (%)</option>
+                <option value="amount">Amount</option>
+              </select>
+            </div>
             <div className="relative">
               <TrendingUp className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input type="number" step="0.1" value={formData.profitRate} onChange={(e) => setFormData(prev => ({ ...prev, profitRate: e.target.value }))} className="w-full pl-10 pr-3 py-2 border rounded-lg" />
+              <input
+                type="number"
+                step={formData.profitInputType === 'amount' ? '1' : '0.1'}
+                value={formData.profitRate}
+                onChange={(e) => setFormData(prev => ({ ...prev, profitRate: e.target.value }))}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg ${errors.profitRate ? 'border-red-500' : 'border-gray-300'}`}
+              />
             </div>
+            {errors.profitRate && <p className="text-red-500 text-xs mt-1">{errors.profitRate}</p>}
           </div>
 
           <div>

@@ -1,4 +1,5 @@
-// src/types/loan.ts
+// src/types/financing.ts
+
 // ============================================
 // ALL LOAN RELATED TYPES
 // ============================================
@@ -22,7 +23,10 @@ export const LOAN_TYPES = {
 export type LoanType = 'murabaha' | 'musharaka' | 'salam' | 'qardHasanah' | 'istisna' | 'mudaraba' | 'tawarruq' | 'ijarah' | 'kafalah';
 export type LoanStatus = 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted' | 'cancelled' | 'distributed';
 
-// InstallmentSchedule 타입 추가
+// ============================================
+// INSTALLMENT SCHEDULE TYPES (NEW)
+// ============================================
+
 export interface InstallmentScheduleItem {
   number: number;
   dueDate: Date;
@@ -31,12 +35,18 @@ export interface InstallmentScheduleItem {
   paidDate?: Date;
 }
 
+export interface InstallmentSchedule {
+  installments: InstallmentScheduleItem[];
+  totalInstallments: number;
+  installmentAmount: number;
+  totalPayable: number;
+}
+
 // ============================================
 // LOAN APPLICATION INTERFACE
 // ============================================
 
 export interface LoanApplication {
-  dueDate: any;
   id: string;
   loanId: string;
   memberId: string;
@@ -51,7 +61,8 @@ export interface LoanApplication {
   dueAmount?: number;
   paidInstallments?: number;
   remainingInstallments?: number;
-  nextDueDate?: any;
+  nextDueDate?: Date;
+  dueDate?: Date;
   purpose?: string;
   status: LoanStatus;
   guarantorId?: string;
@@ -62,20 +73,29 @@ export interface LoanApplication {
   approvedAt?: Date;
   disbursedAt?: Date;
   loanStartDate?: Date;
+  loanEndDate?: Date;
   completedAt?: Date;
   remarks?: string;
   loanApplicationDate?: Date;
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;
+  
+  // 🔥 NEW: Installment related fields
   installmentFrequency?: 'monthly' | 'quarterly' | 'halfYearly' | 'yearly' | 'lumpSum';
   totalInstallments?: number;
   installmentAmount?: number;
   installmentSchedule?: InstallmentScheduleItem[];
+  downPaymentAmount?: number;
+  
+  // 🔥 NEW: Islamic loan specific fields
+  serviceChargePercent?: number;
+  serviceChargeAmount?: number;
+  profitSharingRatio?: number;
 }
 
 // ============================================
-// LOAN INTERFACE
+// LOAN INTERFACE (Simple)
 // ============================================
 
 export interface Loan {
@@ -83,37 +103,29 @@ export interface Loan {
   loanId: string;
   memberId: string;
   memberName: string;
-  
   loanAmount: number;
   interestRate: number;
   totalPayable: number;
   duration: number;
   startDate: Date;
   endDate: Date;
-  
   installmentAmount: number;
   paidAmount: number;
   dueAmount: number;
   paidInstallments: number;
   remainingInstallments: number;
-  
   status: LoanStatus;
   loanType: LoanType;
-  
   approvedBy?: string | null;
   approvedAt?: Date | null;
-  
   guarantorId?: string | null;
   guarantorName?: string | null;
-  
   notes?: string | null;
-  
   collateral?: {
     type: string;
     value: number;
     description: string;
   } | null;
-  
   createdAt: Date;
   createdBy: string;
   updatedAt?: Date | null;
@@ -129,6 +141,8 @@ export interface LoanDisbursement {
   memberId: string;
   memberName: string;
   amount: number;
+  downPaymentAmount?: number;
+  netDisbursedAmount?: number;
   disbursementMethod: 'cash' | 'bank' | 'cheque' | 'transfer';
   disbursedFrom: 'cashier_fund' | 'somity_bank_account' | 'somity_cash';
   sourceDetails: {
@@ -177,8 +191,8 @@ export interface LoanRepayment {
   createdAt: Date;
 }
 
-// Need PaymentType from main types
-import type { PaymentType } from './index';
+// Import PaymentType
+import type { PaymentType } from './common';
 
 // ============================================
 // APPLICANT & GRANTOR INTERFACES
@@ -193,6 +207,7 @@ export interface Applicant {
   address?: string;
   occupation?: string;
   monthlyIncome?: number;
+  email?: string;
 }
 
 export interface Grantor {
@@ -200,6 +215,8 @@ export interface Grantor {
   name: string;
   phone: string;
   relation: string;
+  email?: string;
+  shareCount?: number;
 }
 
 export interface LoanDocument {
@@ -224,6 +241,7 @@ export interface MurabahaDetails {
   deliveryDate?: string;
   installmentAmount?: number;
   totalPayable?: number;
+  installmentFrequency?: string;
 }
 
 export interface MusharakaDetails {
@@ -237,6 +255,7 @@ export interface MusharakaDetails {
   durationMonths: number;
   managementFee?: number;
   exitClause?: string;
+  installmentFrequency?: string;
 }
 
 export interface SalamDetails {
@@ -252,6 +271,7 @@ export interface SalamDetails {
   qualitySpecifications?: string;
   penaltyClause?: string;
   inspectionRequired?: boolean;
+  installmentFrequency?: string;
 }
 
 export interface QardHasanahDetails {
@@ -263,6 +283,7 @@ export interface QardHasanahDetails {
   repaymentSchedule: string;
   emergencyLevel?: string;
   previousQardHistory?: boolean;
+  installmentFrequency?: string;
 }
 
 export interface IstisnaDetails {
@@ -280,6 +301,7 @@ export interface IstisnaDetails {
   specifications: string;
   warrantyPeriod?: number;
   penaltyClause?: string;
+  installmentFrequency?: string;
 }
 
 export interface MudarabaDetails {
@@ -293,6 +315,7 @@ export interface MudarabaDetails {
   managementFee?: number;
   lossAbsorption?: string;
   auditRequired?: boolean;
+  installmentFrequency?: string;
 }
 
 export interface TawarruqDetails {
@@ -307,6 +330,7 @@ export interface TawarruqDetails {
   brokerageFee?: number;
   storageCost?: number;
   saleConfirmation?: boolean;
+  installmentFrequency?: string;
 }
 
 export interface IjarahDetails {
@@ -322,6 +346,7 @@ export interface IjarahDetails {
   purchaseOption?: boolean;
   purchasePrice?: number;
   insuranceRequired?: boolean;
+  installmentFrequency?: string;
 }
 
 export interface KafalahDetails {
@@ -336,6 +361,7 @@ export interface KafalahDetails {
   conditions?: string;
   collateralRequired?: boolean;
   collateralDetails?: string;
+  installmentFrequency?: string;
 }
 
 // Union type for all loan details
@@ -391,8 +417,13 @@ export const LOAN_TYPE_CONFIG: Record<LoanType, {
 };
 
 export const LOAN_TYPE_CODES: Record<LoanType, string> = {
-  murabaha: 'MR', musharaka: 'MS', salam: 'SL',
-  qardHasanah: 'QH', istisna: 'IS', mudaraba: 'MD',
-  tawarruq: 'TW', ijarah: 'IJ', kafalah: 'KF'
-  
+  murabaha: 'MR',
+  musharaka: 'MS',
+  salam: 'SL',
+  qardHasanah: 'QH',
+  istisna: 'IS',
+  mudaraba: 'MD',
+  tawarruq: 'TW',
+  ijarah: 'IJ',
+  kafalah: 'KF'
 };

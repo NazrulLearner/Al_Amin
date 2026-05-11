@@ -1,76 +1,87 @@
-// src/types/fees.ts
+// src/types/contributions.ts
+
 import type { PaymentType, FeeType, PaymentStatus, CollectionStatus } from './common';
 
+// ============================================
+// 📄 FEE TRANSACTION - FLAT STRUCTURE
+// ============================================
+
 export interface FeeTransaction {
-  collector: any;
-  collectorName?: any;
-  receiver?: string;
-  receiverName?: string;
   id: string;
+  
+  // ========== BASIC INFO ==========
+  amount: number;
+  feeAmount: number;
+  balanceDue: number;
+  
+  // ========== STATUS ==========
+  collectionStatus: CollectionStatus;
+  status: PaymentStatus;
+  payType: PaymentType;
+  feeType: FeeType;
+  isAdvancePayment: boolean;
+  isPartialPayment: boolean;
+  
+  // ========== REMARKS & DATES ==========
+  remarks?: string | null;
+  createdAt: Date;
+  updatedAt: Date | null;
+  paymentDate: Date;
+  paymentPeriod: string;
+  
+  // ========== RECEIPT ==========
   receiptId: string;
+  receiptFooter?: string;
+  referenceNo?: string | null;
+  transferReference?: string | null;
+  
+  // ========== MEMBER INFO (Flat) ==========
   memberId: string;
   memberName: string;
-  feeAmount: number;
-  isPartialPayment: boolean;
-  balanceDue: number;
-  paymentDate: Date;
-  payType: PaymentType;
-  referenceNo?: string | null;
-  feeType: FeeType;
+  memberShare: number;
+  
+  // ========== COLLECTOR INFO (Flat) ==========
+  collectorId?: string | null;
+  collectorMemberId?: string | null;
+  collectorName?: string | null;
+  
+  // ========== ENTERED BY (Flat) ==========
+  enteredById: string;
+  enteredByMemberId: string;
+  enteredByName: string;
+  
+  // ========== PAYMENT METHOD (Flat) ==========
+  paymentMethod: string;
+  paymentReferenceNo?: string | null;
+  
+  // ========== DEPOSIT INFO (Flat) ==========
+  depositBankName?: string | null;
+  depositDate?: Date | string | null;
+  depositorName?: string | null;
+  depositorId?: string | null;
+  depositReference?: string | null;
+  depositStatus?: 'pending' | 'deposited';
+  
+  // ========== MONTH RANGE ==========
   feeMonthFrom: string;
-  feeYearFrom: number;
-  monthsPaid: number;
   feeMonthTo: string;
+  feeYearFrom: number;
   feeYearTo: number;
-  paymentPeriod: string;
+  
+  // ========== MONTH DETAILS ==========
+  month: string;
+  monthsPaid: number;
+  
+  // ========== PAID MONTHS ARRAYS ==========
   paidMonths: string[];
   paidYears: number[];
-  paidMonthsDetails?: { month: string; year: number; amount: number }[];
+  paidMonthsDetails: { month: string; year: number; amount: number }[];
   advanceMonths: string[];
-  isAdvancePayment: boolean;
-  collectionStatus: CollectionStatus;
-  collectedBy?: string;
-  collectedById?: string;
-  collectedAt?: Date;
-  depositedBy?: string;
-  depositedAt?: Date;
-  depositedTo?: string;
-  transferReference?: string;
-  bankName?: string;
-  bankReference?: string;
-  member?: {
-    id: string;
-    name: string;
-    share: number;
-  };
-  enteredBy?: {
-    id: string;
-    memberId: string;
-    name: string;
-  } | string;
-  payment?: {
-    method: PaymentType;
-    referenceNo?: string | null;
-  };
-  deposit?: {
-    bankName?: string | null;
-    depositDate?: Date | string | null;
-    depositorName?: string | null;
-    depositorId?: string | null;
-    reference?: string | null;
-    status?: string;
-  };
-  enteredById: string;
-  enteredByName: string;
-  enteredByMemberId: string;
-  receiptFooter?: string;
-  status: PaymentStatus;
-  remarks?: string | null;
-  approvedBy?: string | null;  // ✅ ADD THIS
-  createdAt: Date;
-  createdBy: string;
-  updatedAt?: Date | null;
 }
+
+// ============================================
+// 📝 FEE PAYMENT REQUEST
+// ============================================
 
 export interface FeePaymentRequest {
   memberId: string;
@@ -86,6 +97,10 @@ export interface FeePaymentRequest {
   depositorName?: string;
   depositorId?: string;
 }
+
+// ============================================
+// 👤 MEMBER DUE INFO
+// ============================================
 
 export interface MemberDueInfo {
   memberId: string;
@@ -109,6 +124,10 @@ export interface DueMonth {
   isOverdue: boolean;
 }
 
+// ============================================
+// 📊 FEE SUMMARY
+// ============================================
+
 export interface FeeSummary {
   totalCollected: number;
   totalDue: number;
@@ -118,6 +137,10 @@ export interface FeeSummary {
   pendingMembers: number;
   activeMembers: number;
 }
+
+// ============================================
+// 📝 FEE ENTRY FORM DATA
+// ============================================
 
 export interface FeeEntryFormData {
   memberId: string;
@@ -134,6 +157,10 @@ export interface FeeEntryFormData {
   remarks?: string;
 }
 
+// ============================================
+// 🧾 RECEIPT DATA
+// ============================================
+
 export interface ReceiptData {
   receiptId: string;
   memberId: string;
@@ -146,16 +173,42 @@ export interface ReceiptData {
   somityAddress: string;
 }
 
-export const FEE_TRANSACTION_INITIAL_STATE = {
-  memberId: '', memberName: '',
-  feeAmount: 0, isPartialPayment: false, balanceDue: 0,
-  paymentDate: new Date(), payType: 'cash' as PaymentType, feeType: 'monthly' as FeeType,
-  feeMonthFrom: '', feeYearFrom: new Date().getFullYear(), monthsPaid: 1,
-  feeMonthTo: '', feeYearTo: new Date().getFullYear(),
-  paidMonths: [] as string[], paidYears: [] as number[], advanceMonths: [] as string[], isAdvancePayment: false,
-  collectionStatus: 'collected' as CollectionStatus, collectedBy: '', collectedById: '', collectedAt: new Date(),
-  collector: '', enteredBy: '', status: 'paid' as PaymentStatus,
-  enteredById: '', enteredByName: '', enteredByMemberId: '',
-  receiptFooter: '', collectorMemberId: '', collectorName: '',
-  bankName: '', bankReference: ''
+// ============================================
+// 🔄 INITIAL STATE
+// ============================================
+
+export const FEE_TRANSACTION_INITIAL_STATE: Partial<FeeTransaction> = {
+  memberId: '',
+  memberName: '',
+  memberShare: 0,
+  feeAmount: 0,
+  amount: 0,
+  balanceDue: 0,
+  isPartialPayment: false,
+  paymentDate: new Date(),
+  payType: 'cash',
+  feeType: 'monthly',
+  feeMonthFrom: '',
+  feeYearFrom: new Date().getFullYear(),
+  monthsPaid: 1,
+  feeMonthTo: '',
+  feeYearTo: new Date().getFullYear(),
+  paidMonths: [],
+  paidYears: [],
+  advanceMonths: [],
+  isAdvancePayment: false,
+  collectionStatus: 'collected',
+  status: 'paid',
+  enteredById: '',
+  enteredByName: '',
+  enteredByMemberId: '',
+  receiptFooter: '',
+  collectorId: '',
+  collectorMemberId: '',
+  collectorName: '',
+  depositBankName: '',
+  depositReference: '',
+  paymentMethod: 'cash',
+  paymentReferenceNo: '',
+  remarks: '',
 };

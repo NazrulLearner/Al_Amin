@@ -20,6 +20,11 @@ const LoanReport: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
+  const toAmount = (value: any): number => {
+    const amount = Number(value || 0);
+    return Number.isFinite(amount) ? amount : 0;
+  };
+
   useEffect(() => {
     fetchLoans();
   }, [somityInfo]);
@@ -53,10 +58,10 @@ const LoanReport: React.FC = () => {
 
   const filteredLoans = getFilteredLoans();
   
-  const totalDisbursed = filteredLoans.reduce((sum, l) => sum + l.amount, 0);
-  const totalCollected = filteredLoans.reduce((sum, l) => sum + (l.paidAmount || 0), 0);
-  const totalOutstanding = filteredLoans.reduce((sum, l) => sum + (l.dueAmount || 0), 0);
-  const totalInterest = filteredLoans.reduce((sum, l) => sum + (l.totalPayable - l.amount), 0);
+  const totalDisbursed = filteredLoans.reduce((sum, l) => sum + toAmount(l.amount), 0);
+  const totalCollected = filteredLoans.reduce((sum, l) => sum + toAmount(l.paidAmount), 0);
+  const totalOutstanding = filteredLoans.reduce((sum, l) => sum + toAmount(l.dueAmount), 0);
+  const totalInterest = filteredLoans.reduce((sum, l) => sum + (toAmount(l.totalPayable) - toAmount(l.amount)), 0);
   
   const completedCount = filteredLoans.filter(l => l.status === 'completed').length;
   const activeCount = filteredLoans.filter(l => l.status === 'active').length;
@@ -65,7 +70,7 @@ const LoanReport: React.FC = () => {
   // Loan type wise distribution
   const loanTypeDistribution = filteredLoans.reduce((acc, loan) => {
     const type = loan.loanType;
-    acc[type] = (acc[type] || 0) + loan.amount;
+    acc[type] = (acc[type] || 0) + toAmount(loan.amount);
     return acc;
   }, {} as Record<string, number>);
 

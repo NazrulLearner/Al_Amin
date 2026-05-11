@@ -77,21 +77,30 @@ const Receipt: React.FC = () => {
     return names[method] || method;
   };
 
+  // ✅ Fixed: Flat structure অনুযায়ী collector name বের করা
   const getCollectorName = (transaction: FeeTransaction): string => {
-    const collectorObj = transaction.collector as any;
-    if (collectorObj && typeof collectorObj === 'object' && collectorObj.name) return collectorObj.name;
     if (transaction.collectorName) return transaction.collectorName;
-    if (transaction.receiverName) return transaction.receiverName;
-    if (transaction.receiver) return transaction.receiver;
+    if (transaction.collectorId) {
+      // collectorId থেকে name বের করা (যদি আলাদা relation থাকে)
+      return 'Collector';
+    }
     return 'System';
   };
 
+  // ✅ Fixed: Flat structure অনুযায়ী entered by name বের করা
   const getEnteredByName = (transaction: FeeTransaction): string => {
-    const enteredByObj = transaction.enteredBy as any;
-    if (enteredByObj && typeof enteredByObj === 'object' && enteredByObj.name) return enteredByObj.name;
     if (transaction.enteredByName) return transaction.enteredByName;
-    if (typeof transaction.enteredBy === 'string') return transaction.enteredBy;
+    if (transaction.enteredById) return 'System User';
     return 'System';
+  };
+
+  // ✅ Fixed: Deposit fields থেকে bank info বের করা
+  const getDepositBankName = (transaction: FeeTransaction): string => {
+    return transaction.depositBankName || '';
+  };
+
+  const getDepositReference = (transaction: FeeTransaction): string => {
+    return transaction.depositReference || '';
   };
 
   if (loading) {
@@ -312,27 +321,27 @@ const Receipt: React.FC = () => {
               </div>
             </div>
 
-            {/* Bank Info */}
-            {(transaction.bankName || transaction.bankReference) && (
+            {/* Bank Info - Using deposit fields */}
+            {(getDepositBankName(transaction) || getDepositReference(transaction)) && (
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-4 border border-purple-200">
                 <h3 className="text-xs font-bold text-purple-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                   <Building className="h-3.5 w-3.5" />
                   ব্যাংকের তথ্য
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {transaction.bankName && (
+                  {getDepositBankName(transaction) && (
                     <div>
                       <p className="text-xs text-purple-600">ব্যাংকের নাম</p>
                       <p className="text-sm font-medium text-gray-800 mt-0.5">
-                        {transaction.bankName}
+                        {getDepositBankName(transaction)}
                       </p>
                     </div>
                   )}
-                  {transaction.bankReference && (
+                  {getDepositReference(transaction) && (
                     <div>
                       <p className="text-xs text-purple-600">রেফারেন্স</p>
                       <p className="text-xs font-mono text-gray-700 break-all mt-0.5">
-                        {transaction.bankReference}
+                        {getDepositReference(transaction)}
                       </p>
                     </div>
                   )}
@@ -364,7 +373,7 @@ const Receipt: React.FC = () => {
                       className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"
                     >
                       {getMonthShort(m.month)} {m.year}
-                      </span>
+                    </span>
                   ))}
                 </div>
               </div>

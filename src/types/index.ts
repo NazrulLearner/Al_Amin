@@ -1,4 +1,5 @@
 // src/types/index.ts
+
 // ============================================
 // MAIN TYPES INDEX - Re-exports everything
 // ============================================
@@ -35,7 +36,7 @@ export type { Member, SimpleMember } from './member';
 export { MEMBER_INITIAL_STATE } from './member';
 
 // ============================================
-// FEE TYPES
+// FEE/CONTRIBUTION TYPES
 // ============================================
 export type {
   FeeTransaction,
@@ -49,7 +50,7 @@ export type {
 export { FEE_TRANSACTION_INITIAL_STATE } from './contributions';
 
 // ============================================
-// LOAN TYPES
+// LOAN/FINANCING TYPES
 // ============================================
 export type {
   LoanType,
@@ -71,7 +72,9 @@ export type {
   MudarabaDetails,
   TawarruqDetails,
   IjarahDetails,
-  KafalahDetails
+  KafalahDetails,
+  InstallmentScheduleItem,
+  InstallmentSchedule
 } from './financing';
 export {
   LOAN_TYPES,
@@ -89,11 +92,11 @@ export type {
 export { DEFAULT_SOMITY_SETTINGS } from './settings';
 
 // ============================================
-// COLLECTOR TYPES 🆕
+// COLLECTOR TYPES
 // ============================================
 export type { CollectorAssignment, CollectorConfig } from './collector';
 
 // ============================================
-// SUPER ADMIN TYPES (only for super_admin)
+// SUPER ADMIN TYPES
 // ============================================
 export type { SuperAdminDashboard, FirebaseUsageLog } from './superAdmin';

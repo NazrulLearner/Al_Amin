@@ -46,7 +46,7 @@ const LoanDetails: React.FC = () => {
     if (!somityInfo?.id || !id) return;
     try {
       // Single somity data!
-      const data = await loanService.getRepayments(id);
+      const data = await loanService.getRepaymentsByLoanId(id);
       setRepayments(data);
     } catch (error) { console.error(error); }
   };
@@ -179,8 +179,8 @@ const LoanDetails: React.FC = () => {
 
       <RepaymentModal isOpen={showRepaymentModal} onClose={() => setShowRepaymentModal(false)} onSuccess={handleRepaymentSuccess}
         loanId={loan.id} memberId={loan.memberId} dueAmount={loan.dueAmount} monthlyInstallment={loan.monthlyInstallment}
-        installmentFrequency={(loan as any).installmentFrequency || 'monthly'} totalInstallments={(loan as any).numberOfInstallments || loan.durationMonths}
-        paidInstallments={loan.paidInstallments || 0} nextDueDate={loan.nextDueDate} />
+        installmentFrequency={(loan as any).installmentFrequency || 'monthly'} totalInstallments={(loan as any).totalInstallments || (loan as any).numberOfInstallments || loan.durationMonths}
+        paidInstallments={loan.paidInstallments || 0} nextDueDate={loan.nextDueDate} installmentSchedule={(loan as any).installmentSchedule || []} />
     </div>
   );
 };

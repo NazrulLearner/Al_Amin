@@ -24,22 +24,18 @@ export const memberDueService = {
    */
   async getMemberMonthlyFee(memberId: string): Promise<number> {
     try {
-      // Get member document
       const memberRef = collections.member(memberId);
       const memberSnap = await getDoc(memberRef);
       
-      if (!memberSnap.exists()) {
-        return 1000; // Default fallback
-      }
+      if (!memberSnap.exists()) return 1000;
       
       const memberData = memberSnap.data();
       const shareCount = memberData?.membership?.shareCount || 1;
       
-      // Get fee per share from somity settings
       const settingsRef = collections.somitySettings();
       const settingsSnap = await getDoc(settingsRef);
       
-      let feePerShare = 1000; // Default
+      let feePerShare = 1000;
       if (settingsSnap.exists()) {
         const settings = settingsSnap.data();
         feePerShare = settings?.fee?.amountPerShare || 1000;
@@ -48,7 +44,7 @@ export const memberDueService = {
       return shareCount * feePerShare;
     } catch (error) {
       console.error('Error getting member monthly fee:', error);
-      return 1000; // Default fallback
+      return 1000;
     }
   },
 
@@ -76,28 +72,17 @@ export const memberDueService = {
     try {
       const transactionsRef = collections.contributions();
       
-      // Query all paid transactions for this member. New documents use member.id,
-      // while older documents used the flat memberId field.
-      const legacyQuery = query(
+      // ✅ Flat structure - memberId field ব্যবহার
+      const q = query(
         transactionsRef,
         where('memberId', '==', memberId),
         where('status', '==', 'paid')
       );
-      const nestedQuery = query(
-        transactionsRef,
-        where('member.id', '==', memberId),
-        where('status', '==', 'paid')
-      );
-
-      const [legacySnapshot, nestedSnapshot] = await Promise.all([
-        getDocs(legacyQuery),
-        getDocs(nestedQuery),
-      ]);
+      const snapshot = await getDocs(q);
 
       const allPaidMonths: { month: string; year: number }[] = [];
 
-      // Extract paid months from transactions
-      [...legacySnapshot.docs, ...nestedSnapshot.docs].forEach(doc => {
+      snapshot.forEach(doc => {
         const data = doc.data();
         if (data.paidMonthsDetails && Array.isArray(data.paidMonthsDetails)) {
           allPaidMonths.push(...data.paidMonthsDetails);
@@ -113,10 +98,8 @@ export const memberDueService = {
         }
       });
 
-      // Sort and deduplicate paid months
       const uniquePaidMonths = getUniquePaidMonths(allPaidMonths);
 
-      // Get last paid month
       let lastPaidMonth = '';
       let lastPaidYear = 0;
       if (uniquePaidMonths.length > 0) {
@@ -125,24 +108,17 @@ export const memberDueService = {
         lastPaidYear = last.year;
       }
 
-      // Calculate next due month
       const nextDue = calculateNextDueMonth(startMonth, startYear, lastPaidMonth, lastPaidYear);
 
-      // Get current date
       const now = new Date();
       const currentMonth = MONTHS[now.getMonth()];
       const currentYear = now.getFullYear();
 
-      // Calculate due months
       const dueMonths = calculateDueMonths(startMonth, startYear, uniquePaidMonths, currentMonth, currentYear);
 
-      // Get member's monthly fee
       const monthlyFee = await this.getMemberMonthlyFee(memberId);
-
-      // Calculate total due
       const totalDue = calculateTotalDue(dueMonths, monthlyFee);
 
-      // Calculate all months from start to current for total count
       const allMonthsFromStart = (() => {
         const months: { month: string; year: number }[] = [];
         let cm = startMonth;

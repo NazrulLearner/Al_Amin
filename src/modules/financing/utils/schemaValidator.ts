@@ -1,15 +1,15 @@
 // src/utils/schemaValidator.ts - Complete Fixed Version
-import baseSchema from '../../modules/financing/schemas/base.json';
-import murabahaSchema from '../../modules/financing/schemas/murabaha.json';
-import musharakaSchema from '../../modules/financing/schemas/musharaka.json';
-import salamSchema from '../../modules/financing/schemas/salam.json';
-import qardHasanahSchema from '../../modules/financing/schemas/qardHasanah.json';
-import istisnaSchema from '../../modules/financing/schemas/istisna.json';
-import mudarabaSchema from '../../modules/financing/schemas/mudaraba.json';
-import tawarruqSchema from '../../modules/financing/schemas/tawarruq.json';
-import ijarahSchema from '../../modules/financing/schemas/ijarah.json';
-import kafalahSchema from '../../modules/financing/schemas/kafalah.json';
-import type { LoanType, BaseLoan } from '../../types';
+import baseSchema from '../schemas/base.json';
+import murabahaSchema from '../schemas/murabaha.json';
+import musharakaSchema from '../schemas/musharaka.json';
+import salamSchema from '../schemas/salam.json';
+import qardHasanahSchema from '../schemas/qardHasanah.json';
+import istisnaSchema from '../schemas/istisna.json';
+import mudarabaSchema from '../schemas/mudaraba.json';
+import tawarruqSchema from '../schemas/tawarruq.json';
+import ijarahSchema from '../schemas/ijarah.json';
+import kafalahSchema from '../schemas/kafalah.json';
+import type { LoanType, BaseLoan } from '../../../types';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -243,10 +243,13 @@ export class SchemaValidator {
     // Example cross-field validations
     if (schemaName === 'murabaha') {
       if (data.assetCost && data.profitRate && data.durationMonths) {
-        const profitAmount = (data.assetCost * data.profitRate * data.durationMonths) / 1200;
-        const totalPayable = data.assetCost + profitAmount;
+        const assetCost = Number(data.assetCost);
+        const profitAmount = data.profitInputType === 'amount'
+          ? Number(data.profitAmount || data.profitRate)
+          : Number(data.profitAmount || (assetCost * Number(data.profitRate) * Number(data.durationMonths)) / 1200);
+        const totalPayable = assetCost + profitAmount;
         
-        if (totalPayable > data.assetCost * 2) {
+        if (totalPayable > assetCost * 2) {
           errors.push('মোট পরিশোধযোগ্য অর্থ ক্রয় মূল্যের দ্বিগুণের বেশি। দয়া করে পর্যালোচনা করুন।');
         }
       }

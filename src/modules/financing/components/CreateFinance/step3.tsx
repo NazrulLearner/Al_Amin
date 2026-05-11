@@ -91,6 +91,11 @@ const Step3Finalization: React.FC<Step3FinalizationProps> = ({ onSubmit, formDat
   const duration = formData.loanDetails?.durationMonths || 
                    formData.loanDetails?.leasePeriod || 
                    formData.loanDetails?.deliveryPeriod || 12;
+  const scheduleInterestRate = formData.loanType === 'murabaha'
+    ? formData.loanDetails?.profitInputType === 'amount'
+      ? amount > 0 ? (Number(formData.loanDetails?.profitAmount || formData.loanDetails?.profitRate || 0) / amount) * 100 : 0
+      : Number(formData.loanDetails?.profitRate || interestRate)
+    : getInterestRate();
   
   // Calculate total payable based on loan type
   const getTotalPayable = (): number => {
@@ -107,6 +112,10 @@ const Step3Finalization: React.FC<Step3FinalizationProps> = ({ onSubmit, formDat
         const rentalAmount = details.rentalAmount || 0;
         return rentalAmount * duration;
       case 'murabaha':
+        if (Number(details.totalPayable || 0) > 0) return Number(details.totalPayable);
+        if (details.profitInputType === 'amount') return amount + Number(details.profitAmount || details.profitRate || 0);
+        if (Number(details.profitAmount || 0) > 0) return amount + Number(details.profitAmount);
+        return amount * (1 + interestRate / 100);
       case 'istisna':
       case 'tawarruq':
         return amount * (1 + interestRate / 100);
@@ -130,6 +139,7 @@ const Step3Finalization: React.FC<Step3FinalizationProps> = ({ onSubmit, formDat
       case 'musharaka':
       case 'mudaraba': return 'Profit Sharing';
       case 'ijarah': return 'Rental Rate';
+      case 'murabaha': return formData.loanDetails?.profitInputType === 'amount' ? 'Profit Amount' : 'Profit Rate';
       default: return 'Interest/Profit Rate';
     }
   };
@@ -141,6 +151,10 @@ const Step3Finalization: React.FC<Step3FinalizationProps> = ({ onSubmit, formDat
       case 'musharaka': return `${details.profitSharingRatio || islamicConfig?.musharaka?.profitSharingRatio || 50}%`;
       case 'mudaraba': return `${details.rabulMalShare || 50}% / ${details.mudaribShare || 50}%`;
       case 'ijarah': return `${islamicConfig?.ijarah?.rentalRate || 5}%`;
+      case 'murabaha':
+        return details.profitInputType === 'amount'
+          ? formatAmount(Number(details.profitAmount || details.profitRate || 0))
+          : `${details.profitRate || interestRate}%`;
       default: return `${interestRate}%`;
     }
   };
@@ -322,7 +336,7 @@ const Step3Finalization: React.FC<Step3FinalizationProps> = ({ onSubmit, formDat
     totalInstallments,
     installmentAmount,
     totalPayable,
-    interestRate: getInterestRate(),
+    interestRate: scheduleInterestRate,
     downPayment: 0,
     latePenalty: loanSettings?.latePaymentPenalty || 0
   }}
@@ -545,7 +559,7 @@ const Step3Finalization: React.FC<Step3FinalizationProps> = ({ onSubmit, formDat
           totalInstallments,
           installmentAmount,
           totalPayable,
-          interestRate: getInterestRate(),
+          interestRate: scheduleInterestRate,
           downPayment: 0,
           latePenalty: loanSettings?.latePaymentPenalty || 0
         }}

@@ -21,6 +21,11 @@ const LoanHistory: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { formatDate, formatAmount } = useSomitySettings();
 
+  const toAmount = (value: any): number => {
+    const amount = Number(value || 0);
+    return Number.isFinite(amount) ? amount : 0;
+  };
+
   useEffect(() => {
     fetchAllLoans();
   }, [somityInfo]);
@@ -87,8 +92,8 @@ const LoanHistory: React.FC = () => {
       formatAmount(loan.paidAmount || 0),
       formatAmount(loan.dueAmount || 0),
       loan.status,
-      formatDate(loan.createdAt),
-      loan.completedAt ? formatDate(loan.completedAt) : 'N/A'
+      formatDate(loan.loanStartDate || loan.createdAt),
+      formatDate((loan as any).loanEndDate || loan.dueDate || loan.completedAt)
     ]);
     
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -135,11 +140,11 @@ const LoanHistory: React.FC = () => {
           </div>
           <div className="bg-white rounded-xl shadow-sm border p-4">
             <p className="text-sm text-gray-500">Total Disbursed</p>
-            <p className="text-2xl font-bold text-blue-600">{formatAmount(loans.reduce((sum, l) => sum + l.amount, 0))}</p>
+            <p className="text-2xl font-bold text-blue-600">{formatAmount(loans.reduce((sum, l) => sum + toAmount(l.amount), 0))}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border p-4">
             <p className="text-sm text-gray-500">Total Collected</p>
-            <p className="text-2xl font-bold text-green-600">{formatAmount(loans.reduce((sum, l) => sum + (l.paidAmount || 0), 0))}</p>
+            <p className="text-2xl font-bold text-green-600">{formatAmount(loans.reduce((sum, l) => sum + toAmount(l.paidAmount), 0))}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border p-4">
             <p className="text-sm text-gray-500">Completion Rate</p>
@@ -206,8 +211,8 @@ const LoanHistory: React.FC = () => {
                     <td className="px-6 py-4 font-semibold">{formatAmount(loan.amount)}</td>
                     <td className="px-6 py-4 text-green-600">{formatAmount(loan.paidAmount || 0)}</td>
                     <td className="px-6 py-4">{getStatusBadge(loan.status)}</td>
-                    <td className="px-6 py-4 text-sm">{formatDate(loan.createdAt)}</td>
-                    <td className="px-6 py-4 text-sm">{formatDate(loan.completedAt)}</td>
+                    <td className="px-6 py-4 text-sm">{formatDate(loan.loanStartDate || loan.createdAt)}</td>
+                    <td className="px-6 py-4 text-sm">{formatDate((loan as any).loanEndDate || loan.dueDate || loan.completedAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button

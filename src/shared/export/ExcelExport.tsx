@@ -26,8 +26,8 @@ const ExcelExport: React.FC<ExcelExportProps> = ({ data, filename = 'transaction
         'Months Paid': transaction.monthsPaid || 1,
         'Payment Period': transaction.paymentPeriod || 'N/A',
         'Reference No': transaction.referenceNo || 'N/A',
-        'Receiver': transaction.receiver,
-        'Entered By': transaction.enteredBy,
+        'Collector': transaction.collectorName || 'System',
+        'Entered By': transaction.enteredByName || 'System',
         'Remarks': transaction.remarks || 'N/A'
       }));
 

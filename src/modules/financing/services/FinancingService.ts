@@ -9,6 +9,36 @@ import type { PaymentType, CollectionStatus } from '../../../types';
 import { generateApplicationId, generateLoanId } from '../../../utils/generators/FinancingID';
 import { calculateInstallmentSchedule, getNumberOfInstallments, getInstallmentAmount, type InstallmentFrequency } from '../utils/installmentCalculator';
 
+const addMonths = (date: Date, months: number): Date => {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+};
+
+const toAmount = (value: any): number => {
+  const amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+const getPaidInstallmentCount = (installmentSchedule: any[], paidAmount: number, fallbackInstallmentAmount: number): number => {
+  if (paidAmount <= 0) return 0;
+  if (!installmentSchedule.length) {
+    return fallbackInstallmentAmount > 0 ? Math.floor(paidAmount / fallbackInstallmentAmount) : 0;
+  }
+
+  let paidCount = 0;
+  let coveredAmount = 0;
+  for (const installment of installmentSchedule) {
+    coveredAmount += Number(installment?.amount || fallbackInstallmentAmount || 0);
+    if (paidAmount + 0.001 >= coveredAmount) {
+      paidCount += 1;
+    } else {
+      break;
+    }
+  }
+  return Math.min(paidCount, installmentSchedule.length);
+};
+
 // ============================================
 // TYPES
 // ============================================
@@ -67,6 +97,8 @@ export interface LoanDisbursement {
   memberId: string;
   memberName: string;
   amount: number;
+  downPaymentAmount?: number;
+  netDisbursedAmount?: number;
   disbursementMethod: 'cash' | 'bank' | 'cheque' | 'transfer';
   disbursedFrom: 'cashier_fund' | 'somity_bank_account' | 'somity_cash';
   sourceDetails: {
@@ -208,7 +240,9 @@ export const loanService = {
           durationMonths = Number(application.loanDetails?.durationMonths || 12);
           break;
         case 'murabaha':
-          finalInterestRate = islamicConfig?.murabaha?.profitRate || defaultInterestRate;
+          finalInterestRate = application.loanDetails?.profitInputType === 'amount'
+            ? 0
+            : Number(application.loanDetails?.profitRate || islamicConfig?.murabaha?.profitRate || defaultInterestRate);
           amount = Number(application.loanDetails?.assetCost || 0);
           durationMonths = Number(application.loanDetails?.durationMonths || 12);
           break;
@@ -260,12 +294,23 @@ export const loanService = {
         totalPayable = (application.loanDetails?.rentalAmount || 0) * durationMonths;
       } else if (application.loanType === 'musharaka' || application.loanType === 'mudaraba') {
         totalPayable = amount;
+      } else if (application.loanType === 'murabaha') {
+        if (Number(application.loanDetails?.totalPayable || 0) > 0) {
+          totalPayable = Number(application.loanDetails.totalPayable);
+        } else if (application.loanDetails?.profitInputType === 'amount') {
+          totalPayable = amount + Number(application.loanDetails?.profitAmount || application.loanDetails?.profitRate || 0);
+        } else if (Number(application.loanDetails?.profitAmount || 0) > 0) {
+          totalPayable = amount + Number(application.loanDetails.profitAmount);
+        } else {
+          totalPayable = amount * (1 + finalInterestRate / 100);
+        }
       } else {
         totalPayable = amount * (1 + finalInterestRate / 100);
       }
       
       // Calculate installment schedule
       const loanStartDate = new Date();
+      const loanEndDate = addMonths(loanStartDate, durationMonths);
       const installmentSchedule = calculateInstallmentSchedule(
         totalPayable,
         durationMonths,
@@ -306,7 +351,8 @@ export const loanService = {
         dueAmount: totalPayable,
         paidInstallments: 0,
         remainingInstallments: installmentSchedule.totalInstallments,
-        dueDate: new Date(Date.now() + durationMonths * 30 * 24 * 60 * 60 * 1000),
+        loanEndDate,
+        dueDate: loanEndDate,
         loanApplicationDate: application.loanApplicationDate || new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -360,6 +406,7 @@ export const loanService = {
     loanId: string,
     data: {
       amount: number;
+      downPaymentAmount?: number;
       disbursementDate?: Date;
       disbursementMethod: 'cash' | 'bank' | 'cheque' | 'transfer';
       disbursedFrom: 'cashier_fund' | 'somity_bank_account' | 'somity_cash';
@@ -383,7 +430,23 @@ export const loanService = {
       
       // Get loan to get installment schedule
       const loan = await this.getLoanById(loanId);
-      const installmentSchedule = (loan as any)?.installmentSchedule || [];
+      if (!loan) throw new Error('Loan not found');
+
+      const durationMonths = Number(loan.durationMonths || 0);
+      const installmentFrequency: InstallmentFrequency = loan.installmentFrequency || 'monthly';
+      const schedule = calculateInstallmentSchedule(
+        Number(loan.totalPayable || data.amount || 0),
+        durationMonths,
+        installmentFrequency,
+        disbursementAt
+      );
+      const installmentSchedule = schedule.installments;
+      const downPaymentAmount = Math.max(0, Number(data.downPaymentAmount || 0));
+      const netDisbursedAmount = Math.max(0, Number(data.amount || 0) - downPaymentAmount);
+      const loanEndDate = addMonths(disbursementAt, durationMonths);
+      const paidInstallments = getPaidInstallmentCount(installmentSchedule, downPaymentAmount, schedule.installmentAmount);
+      const nextDueDate = installmentSchedule[paidInstallments]?.dueDate || null;
+      const dueAmount = Math.max(0, Number(loan.totalPayable || 0) - downPaymentAmount);
       
       const disbursementData: LoanDisbursement = {
         id: disbursementId,
@@ -392,6 +455,8 @@ export const loanService = {
         memberId: data.receivedBy,
         memberName: data.receivedByName,
         amount: data.amount,
+        downPaymentAmount,
+        netDisbursedAmount,
         disbursementMethod: data.disbursementMethod,
         disbursedFrom: data.disbursedFrom,
         sourceDetails: {
@@ -417,15 +482,24 @@ export const loanService = {
       
       // Update loan status
       const loanRef = doc(db, 'loans', loanId);
-      const firstInstallmentDueDate = installmentSchedule[0]?.dueDate || disbursementAt;
-      
       await updateDoc(loanRef, {
-        status: 'active',
+        status: dueAmount <= 0 ? 'completed' : 'active',
         disbursementId,
         disbursementStatus: 'completed',
         disbursedAt: disbursementAt,
         loanStartDate: disbursementAt,
-        nextDueDate: firstInstallmentDueDate,
+        loanEndDate,
+        dueDate: loanEndDate,
+        installmentSchedule,
+        totalInstallments: schedule.totalInstallments,
+        installmentAmount: schedule.installmentAmount,
+        paidAmount: downPaymentAmount,
+        downPaymentAmount,
+        dueAmount,
+        paidInstallments,
+        remainingInstallments: Math.max(0, schedule.totalInstallments - paidInstallments),
+        nextDueDate,
+        ...(dueAmount <= 0 && { completedAt: now.toDate() }),
         updatedAt: now.toDate()
       });
       
@@ -571,9 +645,9 @@ export const loanService = {
       // Calculate new values
       const newPaidAmount = (loan.paidAmount || 0) + amount;
       const newDueAmount = loan.totalPayable - newPaidAmount;
-      const newPaidInstallments = isFullPayment ? currentInstallmentNo : (loan.paidInstallments || 0);
-      const remainingInstallments = loan.totalInstallments - newPaidInstallments;
-      const nextDueDate = installmentSchedule[currentInstallmentNo]?.dueDate || null;
+      const newPaidInstallments = getPaidInstallmentCount(installmentSchedule, newPaidAmount, installmentAmount);
+      const remainingInstallments = Math.max(0, (loan.totalInstallments || installmentSchedule.length || 0) - newPaidInstallments);
+      const nextDueDate = installmentSchedule[newPaidInstallments]?.dueDate || null;
       
       await updateDoc(doc(db, 'loans', loanId), {
         paidAmount: newPaidAmount,
@@ -616,21 +690,23 @@ export const loanService = {
     completedLoans: number;
     defaultedLoans: number;
     totalCollected: number;
+    totalOutstanding: number;
   }> {
     try {
       const loans = await this.getAllLoans();
       return {
         totalLoans: loans.length,
-        totalAmount: loans.reduce((sum, l) => sum + (l.amount || 0), 0),
+        totalAmount: loans.reduce((sum, l) => sum + toAmount(l.amount), 0),
         activeLoans: loans.filter(l => l.status === 'active').length,
         pendingApproval: loans.filter(l => l.status === 'pending').length,
         completedLoans: loans.filter(l => l.status === 'completed').length,
         defaultedLoans: loans.filter(l => l.status === 'defaulted').length,
-        totalCollected: loans.reduce((sum, l) => sum + (l.paidAmount || 0), 0)
+        totalCollected: loans.reduce((sum, l) => sum + toAmount(l.paidAmount), 0),
+        totalOutstanding: loans.reduce((sum, l) => sum + toAmount(l.dueAmount), 0)
       };
     } catch (error) {
       console.error('Error getting loan stats:', error);
-      return { totalLoans: 0, totalAmount: 0, activeLoans: 0, pendingApproval: 0, completedLoans: 0, defaultedLoans: 0, totalCollected: 0 };
+      return { totalLoans: 0, totalAmount: 0, activeLoans: 0, pendingApproval: 0, completedLoans: 0, defaultedLoans: 0, totalCollected: 0, totalOutstanding: 0 };
     }
   },
 

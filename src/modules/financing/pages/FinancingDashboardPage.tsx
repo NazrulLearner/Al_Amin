@@ -7,7 +7,7 @@ import { loanService } from '../services/FinancingService';
 import { 
   Plus, Eye, Clock, DollarSign, 
   TrendingUp, Loader2,
-  ArrowRight, CreditCard} from 'lucide-react';
+  ArrowRight, CreditCard, Target, Wallet} from 'lucide-react';
 import { toast } from 'sonner';
 
 const LoansDashboard: React.FC = () => {
@@ -15,7 +15,7 @@ const LoansDashboard: React.FC = () => {
   const { formatDate, formatAmount } = useSomitySettings();
   const [stats, setStats] = useState({
     totalLoans: 0, totalAmount: 0, activeLoans: 0,
-    pendingApproval: 0, completedLoans: 0, defaultedLoans: 0, totalCollected: 0
+    pendingApproval: 0, completedLoans: 0, defaultedLoans: 0, totalCollected: 0, totalOutstanding: 0
   });
   const [recentLoans, setRecentLoans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +47,12 @@ const LoansDashboard: React.FC = () => {
   const statsCards = [
     { title: 'Total Loans', value: stats.totalLoans, icon: <CreditCard className="h-6 w-6" />, color: 'bg-blue-500', bgColor: 'bg-blue-100', textColor: 'text-blue-600' },
     { title: 'Total Disbursed', value: formatAmount(stats.totalAmount), icon: <DollarSign className="h-6 w-6" />, color: 'bg-green-500', bgColor: 'bg-green-100', textColor: 'text-green-600' },
-    { title: 'Active Loans', value: stats.activeLoans, icon: <TrendingUp className="h-6 w-6" />, color: 'bg-orange-500', bgColor: 'bg-orange-100', textColor: 'text-orange-600' },
+    { title: 'Total Collected', value: formatAmount(stats.totalCollected), icon: <Wallet className="h-6 w-6" />, color: 'bg-emerald-500', bgColor: 'bg-emerald-100', textColor: 'text-emerald-600' },
+    { title: 'Outstanding', value: formatAmount(stats.totalOutstanding), icon: <Target className="h-6 w-6" />, color: 'bg-orange-500', bgColor: 'bg-orange-100', textColor: 'text-orange-600' },
+    { title: 'Active Loans', value: stats.activeLoans, icon: <TrendingUp className="h-6 w-6" />, color: 'bg-indigo-500', bgColor: 'bg-indigo-100', textColor: 'text-indigo-600' },
     { title: 'Pending Approval', value: stats.pendingApproval, icon: <Clock className="h-6 w-6" />, color: 'bg-yellow-500', bgColor: 'bg-yellow-100', textColor: 'text-yellow-600' }
   ];
+  const collectionRate = stats.totalAmount > 0 ? Math.round((stats.totalCollected / stats.totalAmount) * 100) : 0;
 
   const quickActions = [
     { title: 'New Loan Application', icon: <Plus className="h-5 w-5" />, href: '/loans/add', color: 'bg-blue-600' },
@@ -76,7 +79,7 @@ const LoansDashboard: React.FC = () => {
           <p className="text-gray-500 mt-2">Manage Islamic financing products and applications</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
           {statsCards.map((stat, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
@@ -90,6 +93,18 @@ const LoansDashboard: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Collection Rate</p>
+              <p className="text-2xl font-bold text-gray-900">{collectionRate}%</p>
+            </div>
+            <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${Math.min(collectionRate, 100)}%` }} />
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

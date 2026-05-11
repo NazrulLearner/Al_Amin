@@ -58,9 +58,14 @@ const ActiveLoan: React.FC = () => {
 
   const { formatAmount } = useSomitySettings();
 
+  const toAmount = (value: any): number => {
+    const amount = Number(value || 0);
+    return Number.isFinite(amount) ? amount : 0;
+  };
+
   const getProgressPercentage = (loan: LoanApplication) => {
-    const paid = loan.paidAmount || 0;
-    const total = loan.totalPayable;
+    const paid = toAmount(loan.paidAmount);
+    const total = toAmount(loan.totalPayable);
     return total > 0 ? (paid / total) * 100 : 0;
   };
 
@@ -121,13 +126,13 @@ const ActiveLoan: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border p-4">
             <p className="text-sm text-gray-500">Total Outstanding</p>
             <p className="text-2xl font-bold text-orange-600">
-              {formatAmount(loans.reduce((sum, l) => sum + (l.dueAmount || 0), 0))}
+              {formatAmount(loans.reduce((sum, l) => sum + toAmount(l.dueAmount), 0))}
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border p-4">
             <p className="text-sm text-gray-500">Total Collected</p>
             <p className="text-2xl font-bold text-green-600">
-              {formatAmount(loans.reduce((sum, l) => sum + (l.paidAmount || 0), 0))}
+              {formatAmount(loans.reduce((sum, l) => sum + toAmount(l.paidAmount), 0))}
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border p-4">
@@ -273,9 +278,10 @@ const ActiveLoan: React.FC = () => {
           monthlyInstallment={selectedLoanForPayment.monthlyInstallment || 0}
           // 🔥 NEW: Pass frequency-related props
           installmentFrequency={(selectedLoanForPayment as any).installmentFrequency || 'monthly'}
-          totalInstallments={(selectedLoanForPayment as any).numberOfInstallments || selectedLoanForPayment.durationMonths}
+          totalInstallments={(selectedLoanForPayment as any).totalInstallments || (selectedLoanForPayment as any).numberOfInstallments || selectedLoanForPayment.durationMonths}
           paidInstallments={selectedLoanForPayment.paidInstallments || 0}
           nextDueDate={selectedLoanForPayment.nextDueDate}
+          installmentSchedule={(selectedLoanForPayment as any).installmentSchedule || []}
         />
       )}
     </div>
