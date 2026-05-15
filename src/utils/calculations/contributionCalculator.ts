@@ -518,7 +518,7 @@ export const getPaymentMethodConfig = (method: string): {
     color: string;
     iconType: 'cash' | 'bank' | 'mobile' | 'other';
   }> = {
-    cash: { label: 'নগদ', color: 'bg-green-600', iconType: 'cash' },
+    cash: { label: 'ক্যাশ', color: 'bg-green-600', iconType: 'cash' },
     bank: { label: 'ব্যাংক', color: 'bg-blue-600', iconType: 'bank' },
     bikash: { label: 'বিকাশ', color: 'bg-pink-600', iconType: 'mobile' },
     nogod: { label: 'নগদ', color: 'bg-orange-600', iconType: 'mobile' },

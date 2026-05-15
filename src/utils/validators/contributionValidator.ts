@@ -22,6 +22,7 @@ export interface ContributionValidationParams {
   depositDate?: string;
   depositorId?: string;
   referenceNo?: string;
+  paymentDate?: string;
   existingPaidMonths?: { month: string; year: number }[];
   collectorEnabled?: boolean;
   hasCollectors?: boolean;
@@ -48,6 +49,13 @@ export const validateContributionEntry = (
   // 3. Amount validation
   if (params.totalAmount <= 0) {
     errors.push('মোট পরিমাণ ০ এর বেশি হতে হবে');
+  }
+
+  // 3. Payment date validation
+  if (!params.paymentDate) {
+    errors.push('জমার তারিখ নির্বাচন করুন');
+  } else if (isNaN(new Date(params.paymentDate).getTime())) {
+    errors.push('সঠিক জমার তারিখ প্রদান করুন');
   }
 
   // 4. Payment method validation

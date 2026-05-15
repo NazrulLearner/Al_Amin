@@ -261,6 +261,7 @@ const ContributionEntry: React.FC = () => {
       collectionStatus: formData.collectionStatus,
       bankName: formData.bankName,
       bankReference: formData.bankReference,
+      paymentDate: formData.paymentDate,
       depositDate: shouldShowBankDepositFields ? formData.depositDate : undefined,
       depositorId: shouldShowBankDepositFields ? formData.depositorId : undefined,
       referenceNo: formData.referenceNo || (shouldShowBankDepositFields ? formData.bankReference : undefined),
@@ -343,7 +344,7 @@ const ContributionEntry: React.FC = () => {
     }
   };
 
-  const isFormValid = formData.calculatedMonths.length > 0 && selectedMember !== null;
+  const isFormValid = formData.calculatedMonths.length > 0 && selectedMember !== null && !!formData.paymentDate;
 
   // ============================================
   // RENDER
@@ -390,8 +391,8 @@ const ContributionEntry: React.FC = () => {
               <div className="p-6">
                 {selectedMember && feeStatus ? (
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Receipt ID + Payment Method */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Receipt ID + Payment Date + Payment Method */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           <FileText className="h-4 w-4 inline mr-1" />
@@ -411,6 +412,19 @@ const ContributionEntry: React.FC = () => {
                             required
                           />
                         )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Calendar className="h-4 w-4 inline mr-1" />
+                          জমার তারিখ
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.paymentDate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, paymentDate: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
                       </div>
                       <PaymentMethodSelector
                         allowedMethods={allowedPaymentMethods}

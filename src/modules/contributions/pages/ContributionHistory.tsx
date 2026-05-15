@@ -1,13 +1,19 @@
 // src/pages/fees/FeesHistory.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useNavigate } from 'react-router-dom';
 import { feesService } from '../services/contributionService';
+import { formatDateWithFormat } from '../../../utils/formatters/dateFormatter';
+import { formatCurrencyWithSettings } from '../../../utils/formatters/currencyFormatter';
+
 import { 
-  Search, Eye, Printer, Loader2, 
+  Search, Eye, Loader2, 
   Edit, Trash2, AlertCircle, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { FeeTransaction } from '../../../types';
+import type { DateFormatType } from '../../../utils/formatters/dateFormatter';
 
 // Edit Transaction Modal Component
 interface EditTransactionModalProps {
@@ -146,7 +152,7 @@ const DeleteConfirmModal: React.FC<{
           <div className="bg-gray-50 p-3 rounded-lg mb-4">
             <p className="text-sm"><strong>রসিদ নম্বর:</strong> {transaction.receiptId}</p>
             <p className="text-sm"><strong>সদস্য:</strong> {transaction.memberName}</p>
-            <p className="text-sm"><strong>পরিমাণ:</strong> ৳{transaction.feeAmount.toLocaleString()}</p>
+            <p className="text-sm"><strong>পরিমাণ:</strong> {formatAmount(transaction.feeAmount)}</p>
             <p className="text-sm"><strong>তারিখ:</strong> {new Date(transaction.createdAt).toLocaleDateString()}</p>
           </div>
           <p className="text-sm text-red-600 mb-4">
@@ -175,11 +181,11 @@ const DeleteConfirmModal: React.FC<{
 
 const FeesHistory: React.FC = () => {
   const { userData } = useAuth();
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<FeeTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<FeeTransaction | null>(null);
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -232,8 +238,7 @@ const FeesHistory: React.FC = () => {
   };
 
   const handleViewReceipt = (transaction: FeeTransaction) => {
-    setSelectedTransaction(transaction);
-    setShowReceiptModal(true);
+    navigate(`/fees/receipt/${transaction.receiptId}`);
   };
 
   const filteredTransactions = transactions.filter(t =>
@@ -242,14 +247,19 @@ const FeesHistory: React.FC = () => {
     t.receiptId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const { settings } = useSomitySettings();
+  const dateFormat = (settings?.financial?.dateFormat as DateFormatType) || 'DD/MM/YYYY';
+
   const formatDate = (date: any) => {
-    if (!date) return 'N/A';
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString('bn-BD', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateWithFormat(date, dateFormat);
+  };
+
+  const getTransactionDate = (transaction: FeeTransaction) => {
+    return transaction.paymentDate || transaction.createdAt;
+  };
+
+  const formatAmount = (amount: number) => {
+    return formatCurrencyWithSettings(amount, settings?.financial);
   };
 
   // Only admin can edit/delete
@@ -289,7 +299,7 @@ const FeesHistory: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">মোট জমা</p>
-            <p className="text-2xl font-bold text-green-600">৳{transactions.reduce((sum, t) => sum + t.feeAmount, 0).toLocaleString()}</p>
+            <p className="text-2xl font-bold text-green-600">{formatAmount(transactions.reduce((sum, t) => sum + t.feeAmount, 0))}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">মোট লেনদেন</p>
@@ -298,21 +308,21 @@ const FeesHistory: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">এই মাসে</p>
             <p className="text-2xl font-bold text-purple-600">
-              ৳{transactions.filter(t => {
-                const date = t.createdAt instanceof Date ? t.createdAt : new Date(t.createdAt);
+              {formatAmount(transactions.filter(t => {
+                const date = getTransactionDate(t) instanceof Date ? getTransactionDate(t) : new Date(getTransactionDate(t));
                 return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
-              }).reduce((sum, t) => sum + t.feeAmount, 0).toLocaleString()}
+              }).reduce((sum, t) => sum + t.feeAmount, 0))}
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">গত মাসে</p>
             <p className="text-2xl font-bold text-amber-600">
-              ৳{transactions.filter(t => {
-                const date = t.createdAt instanceof Date ? t.createdAt : new Date(t.createdAt);
+              {formatAmount(transactions.filter(t => {
+                const date = getTransactionDate(t) instanceof Date ? getTransactionDate(t) : new Date(getTransactionDate(t));
                 const lastMonth = new Date();
                 lastMonth.setMonth(lastMonth.getMonth() - 1);
                 return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear();
-              }).reduce((sum, t) => sum + t.feeAmount, 0).toLocaleString()}
+              }).reduce((sum, t) => sum + t.feeAmount, 0))}
             </p>
           </div>
         </div>
@@ -335,13 +345,13 @@ const FeesHistory: React.FC = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm">{formatDate(transaction.createdAt)}</td>
+                    <td className="px-6 py-4 text-sm">{formatDate(getTransactionDate(transaction))}</td>
                     <td className="px-6 py-4 text-sm font-mono">{transaction.receiptId}</td>
                     <td className="px-6 py-4">
                       <p className="font-medium">{transaction.memberName}</p>
                       <p className="text-xs text-gray-500">{transaction.memberId}</p>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-green-600">৳{transaction.feeAmount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-green-600">{formatAmount(transaction.feeAmount)}</td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                         {transaction.payType}
@@ -393,78 +403,6 @@ const FeesHistory: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Receipt Modal */}
-      {showReceiptModal && selectedTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="text-center mb-4">
-                <h2 className="text-xl font-bold">ফি জমার রসিদ</h2>
-                <p className="text-gray-500">{selectedTransaction.receiptId}</p>
-              </div>
-              
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">তারিখ:</span>
-                  <span className="font-medium">{formatDate(selectedTransaction.createdAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">সদস্যের নাম:</span>
-                  <span className="font-medium">{selectedTransaction.memberName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">সদস্য আইডি:</span>
-                  <span className="font-medium">{selectedTransaction.memberId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">মোট পরিমাণ:</span>
-                  <span className="font-bold text-green-600">৳{selectedTransaction.feeAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">পেমেন্ট পদ্ধতি:</span>
-                  <span className="capitalize">{selectedTransaction.payType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">পরিশোধিত মাস:</span>
-                  <span className="text-sm">{selectedTransaction.paymentPeriod}</span>
-                </div>
-                {selectedTransaction.referenceNo && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">ট্রানজেকশন আইডি:</span>
-                    <span className="font-mono text-sm">{selectedTransaction.referenceNo}</span>
-                  </div>
-                )}
-                {selectedTransaction.remarks && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">মন্তব্য:</span>
-                    <span className="text-sm">{selectedTransaction.remarks}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex gap-3 mt-6 pt-4 border-t">
-                <button
-                  onClick={() => window.print()}
-                  className="flex-1 py-2 border rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
-                >
-                  <Printer size={18} />
-                  প্রিন্ট
-                </button>
-                <button
-                  onClick={() => {
-                    setShowReceiptModal(false);
-                    setSelectedTransaction(null);
-                  }}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  বন্ধ করুন
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit Modal */}
       {showEditModal && selectedTransaction && (

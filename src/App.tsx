@@ -21,6 +21,7 @@ import CollectorDashboard from "./modules/dashboards/pages/CollectorDashboard";
 
 // 🔹 Super Admin Pages
 import SuperAdminDashboard from './modules/super-admin/pages/Dashboard';
+import FirestoreInspector from './modules/super-admin/pages/FirestoreInspector';
 import Requests from './modules/super-admin/pages/Requests';
 import UsageTracking from './modules/super-admin/pages/UsageTracking';
 import Logs from './modules/super-admin/pages/Logs';
@@ -73,11 +74,12 @@ import Ledger from "./modules/cashier/pages/ledger";
 import CashierReport from "./modules/cashier/pages/report";
 
 // 🔹 Bank
-import BankDashboard from "./modules/bank/pages";
-import AddBank from "./modules/bank/pages/addaccount";
-import Transactions from "./modules/bank/pages/transactions";
-import BankLedger from "./modules/bank/pages/ledger";
-import BankHistory from "./modules/bank/pages/history";
+import BankDashboard from "./modules/finance/pages";
+import AddBank from "./modules/finance/pages/bankAccounts";
+import Transactions from "./modules/finance/pages/cashManagement";
+import FunTransfer  from "./modules/finance/pages/fundTransfer";
+import BankLedger from "./modules/finance/pages/ledger";
+import BankHistory from "./modules/finance/pages/TransactionHistory";
 
 // 🔹 Business
 import BusinessDashboard from "./modules/business/pages";
@@ -145,6 +147,7 @@ export default function App() {
          <Route path="usage" element={<UsageTracking />} />
          <Route path="logs" element={<Logs />} />
          <Route path="settings" element={<Settings />} />
+         <Route path="firestore" element={<FirestoreInspector />} />
       </Route>
 
           {/* 🛡️ Protected Routes with Role-based access */}
@@ -399,6 +402,15 @@ export default function App() {
                 <Transactions />
               </ProtectedRoute>
             } />
+
+            <Route path="pages/fundTransfer" element={
+             <ProtectedRoute allowedRoles={['admin']}>
+                <Transactions />
+              </ProtectedRoute>
+            } />
+
+
+
             <Route path="bank/ledger" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <BankLedger />

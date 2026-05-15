@@ -219,9 +219,18 @@ export const feesService = {
 
       snapshot.forEach(doc => {
         const data = doc.data();
+        const createdAt = data.createdAt?.toDate?.() || data.createdAt;
+        const paymentDate = data.paymentDate?.toDate?.() || data.paymentDate;
+        const updatedAt = data.updatedAt?.toDate?.() || data.updatedAt;
+        const depositDate = data.depositDate?.toDate?.() || data.depositDate;
+
         transactions.push({
           id: doc.id,
           ...data,
+          createdAt,
+          paymentDate,
+          updatedAt,
+          depositDate,
         } as FeeTransaction);
       });
 
@@ -254,7 +263,14 @@ export const feesService = {
 
   async updateTransaction(
     transactionId: string,
-    updates: { remarks?: string; referenceNo?: string }
+    updates: {
+      remarks?: string;
+      referenceNo?: string;
+      collectionStatus?: string;
+      depositBankName?: string;
+      depositReference?: string;
+      depositorName?: string;
+    }
   ): Promise<void> {
     try {
       const transactionRef = collections.contribution(transactionId);
