@@ -28,8 +28,8 @@ import {
   FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../../app/providers/AuthProvider";
-import type { UserRole } from "../../../types";
+import { useAuth } from "../providers/AuthProvider";
+import type { UserRole } from "../../types";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -124,7 +124,7 @@ export default function Sidebar({}: SidebarProps) {
           roles: ['super_admin'] as UserRole[]
         },
         {
-          name: "User Management",
+          name: "Users",
           icon: <Users size={18} />,
           path: "/super-admin/users",
           roles: ['super_admin'] as UserRole[]
@@ -136,7 +136,7 @@ export default function Sidebar({}: SidebarProps) {
           roles: ['super_admin'] as UserRole[]
         },
         { 
-          name: "Usage Tracking", 
+          name: "Usage", 
           icon: <TrendingUp size={18} />, 
           path: "/super-admin/usage",
           roles: ['super_admin'] as UserRole[]
@@ -220,36 +220,36 @@ export default function Sidebar({}: SidebarProps) {
       });
     }
 
-    // Fees Management - Admin & Cashier only
+    // Contributions - Admin & Cashier only
     if (['admin', 'cashier'].includes(currentUserRole)) {
       baseMenu.push({
-        name: "Fees Management",
+        name: "Contrib.",
         icon: <DollarSign size={18} />,
         children: [
-          { name: "Fees Dashboard", path: "/fees/index", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Fee Entry", path: "/fees/entry", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Fee History", path: "/fees/history", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Pending Fees", path: "/fees/pending", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Fee Reports", path: "/fees/reports", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Collection Status", path: "/fees/collection-status", roles: ['admin', 'cashier'] as UserRole[] }
+          { name: "Dashboard", path: "/fees/index", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Entry", path: "/fees/entry", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "History", path: "/fees/history", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Pending", path: "/fees/pending", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Reports", path: "/fees/reports", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Status", path: "/fees/collection-status", roles: ['admin', 'cashier'] as UserRole[] }
         ],
         roles: ['admin', 'cashier'] as UserRole[]
       });
     }
 
-    // Loans - Admin & Cashier
+    // Financing - Admin & Cashier
     if (['admin', 'cashier'].includes(currentUserRole)) {
       baseMenu.push({
-        name: "Loans",
+        name: "Financing",
         icon: <Landmark size={18} />,
         children: [
-         { name: "Loan Dashboard", path: "/loans/index", roles: ['admin', 'cashier'] as UserRole[] },
-         { name: "Apply for Loan", path: "/loans/add", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-         { name: "Pending Applications", path: "/loans/pending", roles: ['admin'] as UserRole[] },
-         { name: "Active Loans", path: "/loans/ActiveLoan", roles: ['admin', 'cashier'] as UserRole[] },
-         { name: "Loan List", path: "/loans/list", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-         { name: "Loan History", path: "/loans/history", roles: ['admin', 'cashier'] as UserRole[] },
-         { name: "Loan Reports", path: "/loans/reports", roles: ['admin'] as UserRole[] },
+         { name: "Dashboard", path: "/loans/index", roles: ['admin', 'cashier'] as UserRole[] },
+         { name: "Apply", path: "/loans/add", roles: ['admin', 'cashier', 'member'] as UserRole[] },
+         { name: "Pending", path: "/loans/pending", roles: ['admin'] as UserRole[] },
+         { name: "Active", path: "/loans/ActiveLoan", roles: ['admin', 'cashier'] as UserRole[] },
+         { name: "List", path: "/loans/list", roles: ['admin', 'cashier', 'member'] as UserRole[] },
+         { name: "History", path: "/loans/history", roles: ['admin', 'cashier'] as UserRole[] },
+         { name: "Reports", path: "/loans/reports", roles: ['admin'] as UserRole[] },
         ],
         roles: ['admin', 'cashier'] as UserRole[]
       });
@@ -272,15 +272,16 @@ export default function Sidebar({}: SidebarProps) {
       });
     }
 
-    // Bank - Admin only
+    // Treasury - Admin only
     if (currentUserRole === 'admin') {
       baseMenu.push({
-        name: "Bank",
+        name: "Treasury",
         icon: <Banknote size={18} />,
         children: [
           { name: "Dashboard", path: "/bank/index", roles: ['admin'] as UserRole[] },
-          { name: "Add Bank", path: "/bank/addaccount", roles: ['admin'] as UserRole[] },
-          { name: "Transactions", path: "/bank/transactions", roles: ['admin'] as UserRole[] },
+          { name: "Accounts", path: "/bank/addaccount", roles: ['admin'] as UserRole[] },
+          { name: "Cash Mgmt", path: "/bank/transactions", roles: ['admin'] as UserRole[] },
+          { name: "Transfer", path: "/bank/transfer", roles: ['admin'] as UserRole[] },
           { name: "Ledger", path: "/bank/ledger", roles: ['admin'] as UserRole[] },
           { name: "History", path: "/bank/history", roles: ['admin'] as UserRole[] },
         ],
@@ -311,10 +312,10 @@ export default function Sidebar({}: SidebarProps) {
         name: "Reports",
         icon: <FileChartLine size={18} />,
         children: [
-          { name: "Reports Overview", path: "/reports/index", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Member Reports", path: "/reports/memberReport", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Loan Reports", path: "/reports/loanReport", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Finance Reports", path: "/reports/financeReport", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Overview", path: "/reports/index", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Members", path: "/reports/memberReport", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Financing", path: "/reports/loanReport", roles: ['admin', 'cashier'] as UserRole[] },
+          { name: "Treasury", path: "/reports/financeReport", roles: ['admin', 'cashier'] as UserRole[] },
           ...(currentUserRole === 'admin' ? [
             { name: "Export Data", path: "/reports/exportData", roles: ['admin'] as UserRole[] }
           ] : [])
@@ -330,7 +331,7 @@ export default function Sidebar({}: SidebarProps) {
       children: [
         { name: "Dashboard", path: "/communication/index", roles: ['admin', 'cashier', 'member'] as UserRole[] },
         { name: "Chat", path: "/communication/chat", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-        { name: "Committee Messages", path: "/communication/committeemsgs", roles: ['admin', 'cashier', 'member'] as UserRole[] },
+        { name: "Committee", path: "/communication/committeemsgs", roles: ['admin', 'cashier', 'member'] as UserRole[] },
         { name: "Notices", path: "/communication/notices", roles: ['admin', 'cashier', 'member'] as UserRole[] },
       ],
       roles: ['admin', 'cashier', 'member'] as UserRole[]
@@ -342,11 +343,11 @@ export default function Sidebar({}: SidebarProps) {
       icon: <Settings size={18} />,
       children: [
         ...(currentUserRole === 'admin' ? [
-          { name: "General Settings", path: "/settings/index", roles: ['admin'] as UserRole[] },
-          { name: "Roles & Permissions", path: "/settings/roles", roles: ['admin'] as UserRole[] },
-          { name: "System Settings", path: "/settings/system", roles: ['admin'] as UserRole[] },
+          { name: "General", path: "/settings/index", roles: ['admin'] as UserRole[] },
+          { name: "Roles", path: "/settings/roles", roles: ['admin'] as UserRole[] },
+          { name: "System", path: "/settings/system", roles: ['admin'] as UserRole[] },
         ] : []),
-        { name: "Account Settings", path: "/settings/account", roles: ['admin', 'cashier', 'member'] as UserRole[] },
+        { name: "Account", path: "/settings/account", roles: ['admin', 'cashier', 'member'] as UserRole[] },
         { name: "Notifications", path: "/settings/notifications", roles: ['admin', 'cashier', 'member'] as UserRole[] },
       ],
       roles: ['admin', 'cashier', 'member'] as UserRole[]
@@ -357,7 +358,7 @@ export default function Sidebar({}: SidebarProps) {
       name: "Support",
       icon: <HelpCircle size={18} />,
       children: [
-        { name: "Support Home", path: "/support/index", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
+        { name: "Home", path: "/support/index", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
         { name: "FAQ", path: "/support/faq", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
         { name: "About", path: "/support/about", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
       ],
@@ -370,10 +371,10 @@ export default function Sidebar({}: SidebarProps) {
         name: "Collections",
         icon: <HandCoins size={18} />,
         children: [
-          { name: "Collector Dashboard", path: "/collector/dashboard", roles: ['collector'] as UserRole[] },
-          { name: "Collection History", path: "/collector/history", roles: ['collector'] as UserRole[] },
-          { name: "My Performance", path: "/collector/performance", roles: ['collector'] as UserRole[] },
-          { name: "Pending Collections", path: "/collector/pending", roles: ['collector'] as UserRole[] },
+          { name: "Dashboard", path: "/collector/dashboard", roles: ['collector'] as UserRole[] },
+          { name: "History", path: "/collector/history", roles: ['collector'] as UserRole[] },
+          { name: "Performance", path: "/collector/performance", roles: ['collector'] as UserRole[] },
+          { name: "Pending", path: "/collector/pending", roles: ['collector'] as UserRole[] },
         ],
         roles: ['collector'] as UserRole[]
       });
@@ -506,9 +507,10 @@ export default function Sidebar({}: SidebarProps) {
                     expanded === item.name ? "bg-[#2E5A5A]" : ""
                   }`}
                   transition={{ duration: 0.2 }}
+                  title={open ? item.name : undefined}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {item.icon}
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="shrink-0">{item.icon}</span>
                     <AnimatePresence mode="wait">
                       {open && (
                         <motion.span
@@ -516,7 +518,7 @@ export default function Sidebar({}: SidebarProps) {
                           animate={{ opacity: 1, width: "auto" }}
                           exit={{ opacity: 0, width: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="truncate"
+                          className="truncate text-sm"
                         >
                           {item.name}
                         </motion.span>
@@ -559,11 +561,12 @@ export default function Sidebar({}: SidebarProps) {
                         >
                           <Link
                             to={child.path}
-                            className={`block p-2 rounded-md text-sm hover:bg-[#2E5A5A] transition-colors ${
+                          className={`block p-2 rounded-md text-sm hover:bg-[#2E5A5A] transition-colors truncate ${
                               location.pathname === child.path
                                 ? "bg-[#2E5A5A]"
                                 : ""
                             }`}
+                            title={child.name}
                           >
                             {child.name}
                           </Link>
@@ -580,8 +583,9 @@ export default function Sidebar({}: SidebarProps) {
                   className={`flex items-center gap-2 p-2 rounded-md hover:bg-[#2E5A5A] transition-colors ${
                     location.pathname === item.path ? "bg-[#2E5A5A]" : ""
                   }`}
+                  title={open ? item.name : undefined}
                 >
-                  {item.icon}
+                  <span className="shrink-0">{item.icon}</span>
                   <AnimatePresence mode="wait">
                     {open && (
                       <motion.span
@@ -589,7 +593,7 @@ export default function Sidebar({}: SidebarProps) {
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="truncate"
+                        className="truncate text-sm"
                       >
                         {item.name}
                       </motion.span>

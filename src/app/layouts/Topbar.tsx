@@ -1,6 +1,6 @@
 // src/components/Topbar.tsx
 import React, { useState } from 'react';
-import { useAuth } from '../../../app/providers/AuthProvider';
+import { useAuth } from '../providers/AuthProvider';
 import { 
   Bell, 
   User, 

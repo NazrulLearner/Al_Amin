@@ -74,12 +74,12 @@ import Ledger from "./modules/cashier/pages/ledger";
 import CashierReport from "./modules/cashier/pages/report";
 
 // 🔹 Bank
-import BankDashboard from "./modules/finance/pages";
-import AddBank from "./modules/finance/pages/bankAccounts";
-import Transactions from "./modules/finance/pages/cashManagement";
-import FunTransfer  from "./modules/finance/pages/fundTransfer";
-import BankLedger from "./modules/finance/pages/ledger";
-import BankHistory from "./modules/finance/pages/TransactionHistory";
+import BankDashboard from "./modules/treasury/pages";
+import AddBank from "./modules/treasury/pages/bankAccounts";
+import Transactions from "./modules/treasury/pages/cashManagement";
+import FundTransfer from "./modules/treasury/pages/FundTransfer";
+import BankLedger from "./modules/treasury/pages/bankLedger";
+import BankHistory from "./modules/treasury/pages/TransactionHistory";
 
 // 🔹 Business
 import BusinessDashboard from "./modules/business/pages";
@@ -137,7 +137,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/create-admin" element={<CreateAdmin />} />
           
-          /// 🏢 Super Admin Routes
+          {/* 🏢 Super Admin Routes */}
       <Route path="/super-admin" element={
         <ProtectedRoute allowedRoles={['super_admin']}>
           <DashboardLayout /></ProtectedRoute>}>
@@ -300,7 +300,7 @@ export default function App() {
               </ProtectedRoute>
             } />
 
-           /* All Rols can view but admin & cashier can manage */
+           {/* All Rols can view but admin & cashier can manage */}
 
            {/* Loans */}
             <Route path="loans/index" element={ // Loan Dashboard
@@ -403,9 +403,9 @@ export default function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="pages/fundTransfer" element={
+            <Route path="bank/transfer" element={
              <ProtectedRoute allowedRoles={['admin']}>
-                <Transactions />
+                <FundTransfer />
               </ProtectedRoute>
             } />
 
@@ -413,12 +413,28 @@ export default function App() {
 
             <Route path="bank/ledger" element={
               <ProtectedRoute allowedRoles={['admin']}>
+                <AddBank />
+              </ProtectedRoute>
+            } />
+            <Route path="bank/ledger/:id" element={
+              <ProtectedRoute allowedRoles={['admin']}>
                 <BankLedger />
               </ProtectedRoute>
             } />
             <Route path="bank/history" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <BankHistory />
+              </ProtectedRoute>
+            } />
+
+            <Route path="finance" element={<Navigate to="/bank/index" replace />} />
+            <Route path="finance/addaccount" element={<Navigate to="/bank/addaccount" replace />} />
+            <Route path="finance/transfer" element={<Navigate to="/bank/transfer" replace />} />
+            <Route path="finance/history" element={<Navigate to="/bank/history" replace />} />
+            <Route path="finance/ledger" element={<Navigate to="/bank/ledger" replace />} />
+            <Route path="finance/ledger/:id" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <BankLedger />
               </ProtectedRoute>
             } />
 
