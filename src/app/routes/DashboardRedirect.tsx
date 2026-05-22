@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
 const DashboardRedirect: React.FC = () => {
-  const { user, loading, isSuperAdmin } = useAuth();
+  const { user, userData, loading, isSuperAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -19,23 +19,31 @@ const DashboardRedirect: React.FC = () => {
     return <Navigate to="/welcome" replace />;
   }
 
-  // Route based on role
+  // Route based on role - use module-based routes
   if (isSuperAdmin) {
     return <Navigate to="/super-admin" replace />;
   }
 
-  switch (user.role) {
+  if (!userData) {
+    return <Navigate to="/welcome" replace />;
+  }
+
+  switch (userData.role) {
     case 'admin':
-      return <Navigate to="/admin-dashboard" replace />;
+      return <Navigate to="/teams" replace />;
     case 'cashier':
-      return <Navigate to="/cashier-dashboard" replace />;
+      return <Navigate to="/cashier" replace />;
     case 'collector':
-      return <Navigate to="/collector/dashboard" replace />;
+      return <Navigate to="/contributions" replace />;
+    case 'manager':
+    case 'accountant':
+      return <Navigate to="/reports" replace />;
     case 'member':
-      return <Navigate to="/member-dashboard" replace />;
+      return <Navigate to="/members" replace />;
     default:
-      return <Navigate to="/member-dashboard" replace />;
+      return <Navigate to="/members" replace />;
   }
 };
 
 export default DashboardRedirect;
+
