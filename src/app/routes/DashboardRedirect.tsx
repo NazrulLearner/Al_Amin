@@ -1,4 +1,3 @@
-// src/app/routes/DashboardRedirect.tsx
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
@@ -19,11 +18,12 @@ const DashboardRedirect: React.FC = () => {
     return <Navigate to="/welcome" replace />;
   }
 
-  // Route based on role
+  // Super admin
   if (isSuperAdmin) {
     return <Navigate to="/super-admin" replace />;
   }
 
+  // Role-based redirect
   switch (user.role) {
     case 'admin':
       return <Navigate to="/admin-dashboard" replace />;

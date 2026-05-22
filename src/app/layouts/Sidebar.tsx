@@ -1,4 +1,3 @@
-// src/components/Sidebar.tsx
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -22,13 +21,11 @@ import {
   User,
   Shield,
   Globe,
-  CheckSquare,
   TrendingUp,
-  CreditCard,
-  FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../providers/AuthProvider";
+import { menuConfig } from "../../navigation/menuConfig";
 import type { UserRole } from "../../types";
 
 interface SidebarProps {
@@ -36,30 +33,34 @@ interface SidebarProps {
   toggleSidebar?: () => void;
 }
 
-// Type definitions for menu items
-interface MenuItemBase {
-  name: string;
-  icon: React.ReactElement;
-  roles: UserRole[];
+interface MenuItemType {
+  key?: string;
+  name?: string;
+  label?: string;
+  icon?: string | React.ReactElement;
+  path?: string;
+  roles?: UserRole[];
+  children?: MenuItemType[];
 }
 
-interface MenuItemWithPath extends MenuItemBase {
-  path: string;
-  children?: never;
-}
-
-interface MenuItemWithChildren extends MenuItemBase {
-  path?: never;
-  children: MenuChildItem[];
-}
-
-type MenuItem = MenuItemWithPath | MenuItemWithChildren;
-
-interface MenuChildItem {
-  name: string;
-  path: string;
-  roles: UserRole[];
-}
+const getIconComponent = (iconName: string, size = 18) => {
+  const icons: Record<string, React.ReactElement> = {
+    home: <Home size={size} />,
+    users: <Users size={size} />,
+    landmark: <Landmark size={size} />,
+    building: <Building2 size={size} />,
+    handcoins: <HandCoins size={size} />,
+    banknote: <Banknote size={size} />,
+    business: <BriefcaseBusiness size={size} />,
+    chart: <FileChartLine size={size} />,
+    message: <MessageSquare size={size} />,
+    settings: <Settings size={size} />,
+    help: <HelpCircle size={size} />,
+    dollar: <DollarSign size={size} />,
+    trending: <TrendingUp size={size} />,
+  };
+  return icons[iconName] || <Home size={size} />;
+};
 
 export default function Sidebar({}: SidebarProps) {
   const [open, setOpen] = useState(() => {
@@ -68,14 +69,14 @@ export default function Sidebar({}: SidebarProps) {
   });
   const [expanded, setExpanded] = useState<string | null>(null);
   const location = useLocation();
-  const { userData, somityInfo, logout, isSuperAdmin } = useAuth();
+  const { userData, somityInfo, logout, isSuperAdmin, user } = useAuth();
 
   useEffect(() => {
     localStorage.setItem("sidebar-open", JSON.stringify(open));
   }, [open]);
 
-  const toggleExpand = (name: string) => {
-    setExpanded(expanded === name ? null : name);
+  const toggleExpand = (key: string) => {
+    setExpanded(expanded === key ? null : key);
   };
 
   const handleLogout = async () => {
@@ -86,336 +87,42 @@ export default function Sidebar({}: SidebarProps) {
     }
   };
 
-  // Get current user role from active somity or super admin
-  const getUserRole = (): UserRole | null => {
-    // Super admin check
-    if (isSuperAdmin) {
-      return 'super_admin';
-    }
+  const currentUserRole = user?.role || (isSuperAdmin ? 'super_admin' : null);
+
+  // Filter menu based on user role
+  const filterMenuByRole = (items: MenuItemType[]): MenuItemType[] => {
+    if (!currentUserRole) return [];
     
-    if (!userData || !somityInfo) return null;
-    return userData.role || null;
+    return items
+      .filter(item => {
+        if (!item.roles) return true;
+        if (isSuperAdmin) return true;
+        return item.roles.includes(currentUserRole);
+      })
+      .map(item => ({
+        ...item,
+        children: item.children ? filterMenuByRole(item.children) : undefined,
+      }))
+      .filter(item => {
+        if (item.children && item.children.length === 0) return false;
+        return true;
+      });
   };
 
-  // Get member ID for current somity
-  const getMemberId = (): string => {
-    if (!userData || !somityInfo) return '';
-    return userData.memberId || '';
+  const menuItems = filterMenuByRole(menuConfig as MenuItemType[]);
+
+  const getMenuItemName = (item: MenuItemType): string => {
+    return item.label || item.name || "";
   };
 
-  const currentUserRole = getUserRole();
-  const currentMemberId = getMemberId();
-
-  // Role-based menu configuration
-  const getMenuItems = (): MenuItem[] => {
-    // SUPER ADMIN MENU
-    if (currentUserRole === 'super_admin') {
-      return [
-        { 
-          name: "Dashboard", 
-          icon: <Home size={18} />, 
-          path: "/super-admin",
-          roles: ['super_admin'] as UserRole[]
-        },
-        {
-           name: "Requests", 
-          icon: <CheckSquare size={18} />, 
-          path: "/super-admin/requests",
-          roles: ['super_admin'] as UserRole[]
-        },
-        {
-          name: "Users",
-          icon: <Users size={18} />,
-          path: "/super-admin/users",
-          roles: ['super_admin'] as UserRole[]
-        },
-        {
-          name: "Subscriptions",
-          icon: <CreditCard size={18} />,
-          path: "/super-admin/subscriptions",
-          roles: ['super_admin'] as UserRole[]
-        },
-        { 
-          name: "Usage", 
-          icon: <TrendingUp size={18} />, 
-          path: "/super-admin/usage",
-          roles: ['super_admin'] as UserRole[]
-        },
-        { 
-          name: "Logs", 
-          icon: <FileText size={18} />, 
-          path: "/super-admin/logs",
-          roles: ['super_admin'] as UserRole[]
-        },
-        { 
-          name: "Settings", 
-          icon: <Settings size={18} />, 
-          path: "/super-admin/settings",
-          roles: ['super_admin'] as UserRole[]
-        },
-        { 
-          name: "Support", 
-          icon: <HelpCircle size={18} />, 
-          path: "/support/index",
-          roles: ['super_admin'] as UserRole[]
-        },
-      ];
+  const getMenuItemIcon = (item: MenuItemType): React.ReactElement => {
+    if (typeof item.icon === 'string') {
+      return getIconComponent(item.icon);
     }
-
-    if (!currentUserRole) return [];
-
-    // REGULAR USER MENU (Admin, Cashier, Member)
-    const baseMenu: MenuItem[] = [
-      { 
-        name: "Dashboard", 
-        icon: <Home size={18} />, 
-        path: currentUserRole === 'admin' ? '/admin-dashboard' : 
-              currentUserRole === 'cashier' ? '/cashier-dashboard': '/member-dashboard',
-        roles: ['admin', 'cashier', 'member'] as UserRole[]
-      },
-    ];
-
-    // Teams - Admin & Cashier only
-    if (['admin', 'cashier'].includes(currentUserRole)) {
-      baseMenu.push({
-        name: "Teams",
-        icon: <Building2 size={18} />,
-        children: [
-          { name: "Team List", path: "/teams/index", roles: ['admin', 'cashier'] as UserRole[] },
-          ...(currentUserRole === 'admin' ? [
-            { name: "Create Team", path: "/teams/create", roles: ['admin'] as UserRole[] }
-          ] : []),
-          { name: "Team History", path: "/teams/teamHistory", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Team Performance", path: "/teams/performance", roles: ['admin', 'cashier'] as UserRole[] },
-        ],
-        roles: ['admin', 'cashier'] as UserRole[]
-      });
-    }
-
-    // Members - All roles
-    baseMenu.push({
-      name: "Members",
-      icon: <Users size={18} />,
-      children: [
-        { name: "Member List", path: "/members/index", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-        ...(['admin', 'cashier'].includes(currentUserRole) ? [
-          { name: "Add Member", path: "/members/AddMember", roles: ['admin', 'cashier'] as UserRole[] }
-        ] : [])
-      ],
-      roles: ['admin', 'cashier', 'member'] as UserRole[]
-    });
-
-    // Users - Admin only
-    if (currentUserRole === 'admin') {
-      baseMenu.push({
-        name: "Users",
-        icon: <FileChartLine size={18} />,
-        children: [
-          { name: "Users List", path: "/users/index", roles: ['admin'] as UserRole[] },
-          { name: "Add User", path: "/users/AddUser", roles: ['admin'] as UserRole[] },
-          { name: "Create Member Account", path: "/users/CreateMemberAccount", roles: ['admin'] as UserRole[] },
-          { name: "User Profile", path: "/users/Profile", roles: ['admin'] as UserRole[] },
-        ],
-        roles: ['admin'] as UserRole[]
-      });
-    }
-
-    // Contributions - Admin & Cashier only
-    if (['admin', 'cashier'].includes(currentUserRole)) {
-      baseMenu.push({
-        name: "Contrib.",
-        icon: <DollarSign size={18} />,
-        children: [
-          { name: "Dashboard", path: "/fees/index", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Entry", path: "/fees/entry", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "History", path: "/fees/history", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Pending", path: "/fees/pending", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Reports", path: "/fees/reports", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Status", path: "/fees/collection-status", roles: ['admin', 'cashier'] as UserRole[] }
-        ],
-        roles: ['admin', 'cashier'] as UserRole[]
-      });
-    }
-
-    // Financing - Admin & Cashier
-    if (['admin', 'cashier'].includes(currentUserRole)) {
-      baseMenu.push({
-        name: "Financing",
-        icon: <Landmark size={18} />,
-        children: [
-         { name: "Dashboard", path: "/loans/index", roles: ['admin', 'cashier'] as UserRole[] },
-         { name: "Apply", path: "/loans/add", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-         { name: "Pending", path: "/loans/pending", roles: ['admin'] as UserRole[] },
-         { name: "Active", path: "/loans/ActiveLoan", roles: ['admin', 'cashier'] as UserRole[] },
-         { name: "List", path: "/loans/list", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-         { name: "History", path: "/loans/history", roles: ['admin', 'cashier'] as UserRole[] },
-         { name: "Reports", path: "/loans/reports", roles: ['admin'] as UserRole[] },
-        ],
-        roles: ['admin', 'cashier'] as UserRole[]
-      });
-    }
-
-    // Cashier - Admin & Cashier only
-    if (['admin', 'cashier'].includes(currentUserRole)) {
-      baseMenu.push({
-        name: "Cashier",
-        icon: <HandCoins size={18} />,
-        children: [
-          { name: "Dashboard", path: "/cashier/index", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Cash In", path: "/cashier/cashIn", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Cash Out", path: "/cashier/cashOut", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Transfer", path: "/cashier/transfer", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Ledger", path: "/cashier/ledger", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Report", path: "/cashier/report", roles: ['admin', 'cashier'] as UserRole[] },
-        ],
-        roles: ['admin', 'cashier'] as UserRole[]
-      });
-    }
-
-    // Treasury - Admin only
-    if (currentUserRole === 'admin') {
-      baseMenu.push({
-        name: "Treasury",
-        icon: <Banknote size={18} />,
-        children: [
-          { name: "Dashboard", path: "/bank/index", roles: ['admin'] as UserRole[] },
-          { name: "Accounts", path: "/bank/addaccount", roles: ['admin'] as UserRole[] },
-          { name: "Cash Mgmt", path: "/bank/transactions", roles: ['admin'] as UserRole[] },
-          { name: "Transfer", path: "/bank/transfer", roles: ['admin'] as UserRole[] },
-          { name: "Ledger", path: "/bank/ledger", roles: ['admin'] as UserRole[] },
-          { name: "History", path: "/bank/history", roles: ['admin'] as UserRole[] },
-        ],
-        roles: ['admin'] as UserRole[]
-      });
-    }
-
-    // Business - Admin only
-    if (currentUserRole === 'admin') {
-      baseMenu.push({
-        name: "Business",
-        icon: <BriefcaseBusiness size={18} />,
-        children: [
-          { name: "List", path: "/business", roles: ['admin'] as UserRole[] },
-          { name: "Create", path: "/business/create", roles: ['admin'] as UserRole[] },
-        ],
-        roles: ['admin'] as UserRole[]
-      });
-    }
-
-    // Investments - Admin only
-    if (currentUserRole === 'admin') {
-      baseMenu.push({
-        name: "Investments",
-        icon: <TrendingUp size={18} />,
-        children: [
-          { name: "Dashboard", path: "/investments", roles: ['admin'] as UserRole[] },
-          { name: "List", path: "/investments/list", roles: ['admin'] as UserRole[] },
-          { name: "Create", path: "/investments/create", roles: ['admin'] as UserRole[] },
-          { name: "History", path: "/investments/history", roles: ['admin'] as UserRole[] },
-          { name: "Reports", path: "/investments/reports", roles: ['admin'] as UserRole[] },
-        ],
-        roles: ['admin'] as UserRole[]
-      });
-    }
-
-    // Reports - Admin & Cashier only
-    if (['admin', 'cashier'].includes(currentUserRole)) {
-      baseMenu.push({
-        name: "Reports",
-        icon: <FileChartLine size={18} />,
-        children: [
-          { name: "Overview", path: "/reports/index", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Members", path: "/reports/memberReport", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Financing", path: "/reports/loanReport", roles: ['admin', 'cashier'] as UserRole[] },
-          { name: "Treasury", path: "/reports/financeReport", roles: ['admin', 'cashier'] as UserRole[] },
-          ...(currentUserRole === 'admin' ? [
-            { name: "Export Data", path: "/reports/exportData", roles: ['admin'] as UserRole[] }
-          ] : [])
-        ],
-        roles: ['admin', 'cashier'] as UserRole[]
-      });
-    }
-
-    // Communication - All roles
-    baseMenu.push({
-      name: "Communication",
-      icon: <MessageSquare size={18} />,
-      children: [
-        { name: "Dashboard", path: "/communication/index", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-        { name: "Chat", path: "/communication/chat", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-        { name: "Committee", path: "/communication/committeemsgs", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-        { name: "Notices", path: "/communication/notices", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-      ],
-      roles: ['admin', 'cashier', 'member'] as UserRole[]
-    });
-
-    // Settings
-    baseMenu.push({
-      name: "Settings",
-      icon: <Settings size={18} />,
-      children: [
-        ...(currentUserRole === 'admin' ? [
-          { name: "General", path: "/settings/index", roles: ['admin'] as UserRole[] },
-          { name: "Roles", path: "/settings/roles", roles: ['admin'] as UserRole[] },
-          { name: "System", path: "/settings/system", roles: ['admin'] as UserRole[] },
-        ] : []),
-        { name: "Account", path: "/settings/account", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-        { name: "Notifications", path: "/settings/notifications", roles: ['admin', 'cashier', 'member'] as UserRole[] },
-      ],
-      roles: ['admin', 'cashier', 'member'] as UserRole[]
-    });
-
-    // Support - All roles
-    baseMenu.push({
-      name: "Support",
-      icon: <HelpCircle size={18} />,
-      children: [
-        { name: "Home", path: "/support/index", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
-        { name: "FAQ", path: "/support/faq", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
-        { name: "About", path: "/support/about", roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[] },
-      ],
-      roles: ['admin', 'cashier', 'member', 'collector'] as UserRole[]
-    });
-
-    // Collector Menu - Collectors only
-    if (currentUserRole === 'collector') {
-      baseMenu.push({
-        name: "Collections",
-        icon: <HandCoins size={18} />,
-        children: [
-          { name: "Dashboard", path: "/collector/dashboard", roles: ['collector'] as UserRole[] },
-          { name: "History", path: "/collector/history", roles: ['collector'] as UserRole[] },
-          { name: "Performance", path: "/collector/performance", roles: ['collector'] as UserRole[] },
-          { name: "Pending", path: "/collector/pending", roles: ['collector'] as UserRole[] },
-        ],
-        roles: ['collector'] as UserRole[]
-      });
-    }
-
-    return baseMenu;
+    return item.icon || <Home size={18} />;
   };
 
-  const menu = getMenuItems();
-
-  // Filter menu items based on user role
-  const filteredMenu = menu.filter(item => {
-    if (!currentUserRole) return false;
-    return item.roles.includes(currentUserRole);
-  });
-
-  // Filter children based on user role
-  const filterChildren = (children: MenuChildItem[]) => {
-    if (!currentUserRole) return [];
-    return children.filter(child => child.roles.includes(currentUserRole));
-  };
-
-  // Check if menu item has children (type guard)
-  const hasChildren = (item: MenuItem): item is MenuItemWithChildren => {
-    return 'children' in item && item.children !== undefined;
-  };
-
-  // Get role display name
-  const getRoleDisplayName = (role: UserRole | null): string => {
+  const getRoleDisplayName = (role: UserRole | null | string): string => {
     switch(role) {
       case 'super_admin': return 'Super Admin';
       case 'admin': return 'Administrator';
@@ -424,6 +131,11 @@ export default function Sidebar({}: SidebarProps) {
       case 'member': return 'Member';
       default: return 'User';
     }
+  };
+
+  const getMemberId = (): string => {
+    if (!userData) return '';
+    return userData.memberId || '';
   };
 
   if (!currentUserRole || !userData) {
@@ -470,7 +182,7 @@ export default function Sidebar({}: SidebarProps) {
                 </p>
                 <p className="text-xs text-gray-300 leading-none mt-1 truncate">
                   {getRoleDisplayName(currentUserRole)}
-                  {!isSuperAdminUser && currentMemberId && ` • ID: ${currentMemberId}`}
+                  {!isSuperAdminUser && getMemberId() && ` • ID: ${getMemberId()}`}
                 </p>
                 {!isSuperAdminUser && somityInfo && (
                   <p className="text-xs text-emerald-300 leading-none mt-1 truncate">
@@ -508,21 +220,21 @@ export default function Sidebar({}: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
-        {filteredMenu.map((item) => (
-          <div key={item.name}>
-            {hasChildren(item) ? (
+        {menuItems.map((item) => (
+          <div key={item.key || getMenuItemName(item)}>
+            {item.children && item.children.length > 0 ? (
               <>
                 <motion.button
                   layout
-                  onClick={() => toggleExpand(item.name)}
+                  onClick={() => toggleExpand(item.key || getMenuItemName(item))}
                   className={`flex items-center justify-between w-full p-2 rounded-md hover:bg-[#2E5A5A] transition-colors ${
-                    expanded === item.name ? "bg-[#2E5A5A]" : ""
+                    expanded === (item.key || getMenuItemName(item)) ? "bg-[#2E5A5A]" : ""
                   }`}
                   transition={{ duration: 0.2 }}
-                  title={open ? item.name : undefined}
+                  title={open ? getMenuItemName(item) : undefined}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="shrink-0">{item.icon}</span>
+                    <span className="shrink-0">{getMenuItemIcon(item)}</span>
                     <AnimatePresence mode="wait">
                       {open && (
                         <motion.span
@@ -532,7 +244,7 @@ export default function Sidebar({}: SidebarProps) {
                           transition={{ duration: 0.2 }}
                           className="truncate text-sm"
                         >
-                          {item.name}
+                          {getMenuItemName(item)}
                         </motion.span>
                       )}
                     </AnimatePresence>
@@ -545,7 +257,7 @@ export default function Sidebar({}: SidebarProps) {
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ duration: 0.2 }}
                       >
-                        {expanded === item.name ? (
+                        {expanded === (item.key || getMenuItemName(item)) ? (
                           <ChevronDown size={16} />
                         ) : (
                           <ChevronRight size={16} />
@@ -556,7 +268,7 @@ export default function Sidebar({}: SidebarProps) {
                 </motion.button>
 
                 <AnimatePresence>
-                  {expanded === item.name && open && (
+                  {expanded === (item.key || getMenuItemName(item)) && open && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -564,23 +276,21 @@ export default function Sidebar({}: SidebarProps) {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="ml-6 mt-1 space-y-1 overflow-hidden"
                     >
-                      {filterChildren(item.children).map((child) => (
+                      {item.children.map((child) => (
                         <motion.div
-                          key={child.name}
+                          key={child.key || child.label}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.2 }}
                         >
                           <Link
-                            to={child.path}
-                          className={`block p-2 rounded-md text-sm hover:bg-[#2E5A5A] transition-colors truncate ${
-                              location.pathname === child.path
-                                ? "bg-[#2E5A5A]"
-                                : ""
+                            to={child.path || "#"}
+                            className={`block p-2 rounded-md text-sm hover:bg-[#2E5A5A] transition-colors truncate ${
+                              location.pathname === child.path ? "bg-[#2E5A5A]" : ""
                             }`}
-                            title={child.name}
+                            title={child.label || child.name}
                           >
-                            {child.name}
+                            {child.label || child.name}
                           </Link>
                         </motion.div>
                       ))}
@@ -591,13 +301,13 @@ export default function Sidebar({}: SidebarProps) {
             ) : (
               <motion.div layout transition={{ duration: 0.2 }}>
                 <Link
-                  to={item.path || '#'}
+                  to={item.path || "#"}
                   className={`flex items-center gap-2 p-2 rounded-md hover:bg-[#2E5A5A] transition-colors ${
                     location.pathname === item.path ? "bg-[#2E5A5A]" : ""
                   }`}
-                  title={open ? item.name : undefined}
+                  title={open ? getMenuItemName(item) : undefined}
                 >
-                  <span className="shrink-0">{item.icon}</span>
+                  <span className="shrink-0">{getMenuItemIcon(item)}</span>
                   <AnimatePresence mode="wait">
                     {open && (
                       <motion.span
@@ -607,7 +317,7 @@ export default function Sidebar({}: SidebarProps) {
                         transition={{ duration: 0.2 }}
                         className="truncate text-sm"
                       >
-                        {item.name}
+                        {getMenuItemName(item)}
                       </motion.span>
                     )}
                   </AnimatePresence>

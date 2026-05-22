@@ -1,6 +1,7 @@
 // src/app/routes/RouteRegistry.ts
 import type { RouteObject } from "react-router-dom";
 
+// সব মডিউল ইমপোর্ট
 import { teamRoutes } from "../../modules/teams/routes";
 import { membersRoutes } from "../../modules/members/routes";
 import { financingRoutes } from "../../modules/financing/routes";
@@ -30,5 +31,5 @@ export const RouteRegistry: RouteObject[] = [
   ...cashierRoutes,
   ...communicationRoutes,
   ...supportRoutes,
-  ...investmentRoutes, // 👈 এই লাইন যোগ করুন
+  ...investmentRoutes,
 ];

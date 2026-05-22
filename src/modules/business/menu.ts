@@ -22,6 +22,23 @@ export const businessMenu = [
         roles: ["admin"],
         permissions: ["business.create"],
       },
+      {
+        key: "business_detail",
+        label: "Business Detail",
+        path: "/business/:id",
+        icon: "info",
+        roles: ["admin"],
+        permissions: ["business.view"],
+      },
+      {
+        key: "business_update",
+        label: "Update Business",
+        path: "/business/:id/edit",
+        icon: "edit",
+        roles: ["admin"],
+        permissions: ["business.update"],
+      },
+
     ],
   },
 ];

@@ -1,35 +1,36 @@
-import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
-import BusinessCreatePage from "./pages/BusinessCreatePage";
-import BusinessUpdatePage from "./pages/BusinessUpdatePage";
-import BusinessDetailPage from "./pages/BusinessDetailPage";
+import { lazy } from 'react';
+import type { RouteObject } from 'react-router-dom';
+import BusinessCreatePage from './pages/BusinessCreatePage';
+import BusinessUpdatePage from './pages/BusinessUpdatePage';
+import BusinessDetailPage from './pages/BusinessDetailPage';
 
-const BusinessListPage = lazy(() => import("./pages/BusinessListPage"));
+const BusinessListPage = lazy(() => import('./pages/BusinessListPage'));
 
 export const businessRoutes: RouteObject[] = [
   {
-    path: "business",
+    path: 'business',
     children: [
       {
         index: true,
         element: <BusinessListPage />,
       },
       {
-        path: "list",
+        path: 'list',
         element: <BusinessListPage />,
       },
       {
-        path: "create",
+        path: 'create',
         element: <BusinessCreatePage />,
       },
       {
-        path: "edit/:id",
+        path: 'update/:id',
         element: <BusinessUpdatePage />,
       },
       {
-        path: ":id",
+        path: ':id',
         element: <BusinessDetailPage />,
       },
     ],
   },
 ];
+export default businessRoutes;

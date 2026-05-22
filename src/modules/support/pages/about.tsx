@@ -1,6 +1,6 @@
 import React from "react";
 
-const MemberList: React.FC = () => {
+const About: React.FC = () => {
   return (
     <div className="p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-4">👥 About</h1>
@@ -9,4 +9,4 @@ const MemberList: React.FC = () => {
   );
 };
 
-export default MemberList;
+export default About;
