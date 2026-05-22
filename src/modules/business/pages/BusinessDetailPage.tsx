@@ -1,12 +1,8 @@
-import React from "react";
-
-const MemberList: React.FC = () => {
+export default function BusinessDetailPage() {
   return (
-    <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold mb-4">👥 Business Ledger</h1>
-      <p className="text-gray-500">All business transactions will appear here.</p>
+    <div>
+      <h2>Business Detail</h2>
+      <p>Overview / Transactions / Assets later add hobe</p>
     </div>
   );
-};
-
-export default MemberList;
+}

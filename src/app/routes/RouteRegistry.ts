@@ -15,6 +15,9 @@ import { cashierRoutes } from "../../modules/cashier/routes";
 import { communicationRoutes } from "../../modules/communication/routes";
 import { supportRoutes } from "../../modules/support/routes";
 
+// 👇 Investment যোগ করুন
+import { investmentRoutes } from "../../modules/Investments/routes";
+
 export const RouteRegistry: RouteObject[] = [
   ...teamRoutes,
   ...membersRoutes,
@@ -29,4 +32,5 @@ export const RouteRegistry: RouteObject[] = [
   ...cashierRoutes,
   ...communicationRoutes,
   ...supportRoutes,
+  ...investmentRoutes, // 👈 এই লাইন যোগ করুন
 ];

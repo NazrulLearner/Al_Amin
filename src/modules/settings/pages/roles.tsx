@@ -62,6 +62,11 @@ interface Role {
     viewInvestments: boolean;
     createInvestment: boolean;
     manageInvestments: boolean;
+
+    // Business
+    viewBusiness: boolean;
+    createBusiness: boolean;
+    manageBusiness: boolean;
   };
   isDefault: boolean;
   memberCount: number;
@@ -99,6 +104,9 @@ const defaultPermissions = {
   viewInvestments: false,
   createInvestment: false,
   manageInvestments: false,
+  viewBusiness: false,
+  createBusiness: false,
+  manageBusiness: false,
 };
 
 const defaultRoles: Role[] = [
@@ -387,6 +395,15 @@ const Roles: React.FC = () => {
         { key: 'viewInvestments', label: 'View Investments', icon: <Eye className="h-3 w-3" /> },
         { key: 'createInvestment', label: 'Create Investment', icon: <Plus className="h-3 w-3" /> },
         { key: 'manageInvestments', label: 'Manage Investments', icon: <Settings className="h-3 w-3" /> }
+      ]
+    },
+    {
+      name: 'Business',
+      icon: <TrendingUp className="h-4 w-4" />,
+      permissions: [
+        { key: 'viewBusiness', label: 'View Business', icon: <Eye className="h-3 w-3" /> },
+        { key: 'createBusiness', label: 'Create Business', icon: <Plus className="h-3 w-3" /> },
+        { key: 'manageBusiness', label: 'Manage Business', icon: <Settings className="h-3 w-3" /> }
       ]
     }
   ];

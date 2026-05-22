@@ -295,12 +295,24 @@ export default function Sidebar({}: SidebarProps) {
         name: "Business",
         icon: <BriefcaseBusiness size={18} />,
         children: [
-          { name: "Dashboard", path: "/business/index", roles: ['admin'] as UserRole[] },
-          { name: "Add Business", path: "/business/addbusiness", roles: ['admin'] as UserRole[] },
-          { name: "Profit Report", path: "/business/profitreport", roles: ['admin'] as UserRole[] },
-          { name: "ROI Tracking", path: "/business/roitracking", roles: ['admin'] as UserRole[] },
-          { name: "Ledger", path: "/business/ledger", roles: ['admin'] as UserRole[] },
-          { name: "History", path: "/business/history", roles: ['admin'] as UserRole[] },
+          { name: "List", path: "/business", roles: ['admin'] as UserRole[] },
+          { name: "Create", path: "/business/create", roles: ['admin'] as UserRole[] },
+        ],
+        roles: ['admin'] as UserRole[]
+      });
+    }
+
+    // Investments - Admin only
+    if (currentUserRole === 'admin') {
+      baseMenu.push({
+        name: "Investments",
+        icon: <TrendingUp size={18} />,
+        children: [
+          { name: "Dashboard", path: "/investments", roles: ['admin'] as UserRole[] },
+          { name: "List", path: "/investments/list", roles: ['admin'] as UserRole[] },
+          { name: "Create", path: "/investments/create", roles: ['admin'] as UserRole[] },
+          { name: "History", path: "/investments/history", roles: ['admin'] as UserRole[] },
+          { name: "Reports", path: "/investments/reports", roles: ['admin'] as UserRole[] },
         ],
         roles: ['admin'] as UserRole[]
       });

@@ -1,12 +1,28 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import { businessService } from "../services/businessService";
+import type { Business } from "../types/business.types";
+import BusinessCard from "../components/BusinessCard";
 
-const MemberList: React.FC = () => {
+export default function BusinessListPage() {
+  const [list, setList] = useState<Business[]>([]);
+
+  useEffect(() => {
+    businessService.getAll().then(setList);
+  }, []);
+
   return (
-    <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold mb-4">👥 Business History</h1>
-      <p className="text-gray-500">All business transaction history will appear here.</p>
+    <div className="space-y-4 p-4 md:p-6">
+      <h1 className="text-2xl font-bold text-gray-900">Business List</h1>
+
+      {list.length === 0 && (
+        <p className="text-gray-500">No business found. Create one first.</p>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {list.map((b) => (
+          <BusinessCard key={b.id} business={b} />
+        ))}
+      </div>
     </div>
   );
-};
-
-export default MemberList;
+}
