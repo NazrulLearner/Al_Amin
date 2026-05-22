@@ -14,7 +14,7 @@ import GeneralSettings from '../components/GeneralSettings';
 import ShareSettings from '../components/ShareSettings';
 import FeeSettings from '../components/FeeSettings';
 import MemberSettings from '../components/MemberSettings';
-import LoanSettings from '../components/FinancingSettings';
+import BankSettings from '../components/BankSettings';
 import IslamicLoanSettings from '../components/IslamicFinanceSettings';
 import InvestmentSettings from '../components/InvestmentSettings';
 import CollectionSettings from '../components/CollectionSettings';
@@ -149,8 +149,8 @@ const SomitySettingsPage: React.FC = () => {
     { id: 'share', label: 'Share', icon: '📊', shortLabel: 'Share' },
     { id: 'fee', label: 'Fees', icon: '💰', shortLabel: 'Fee' },
     { id: 'member', label: 'Members', icon: '👥', shortLabel: 'Members' },
-    { id: 'loan', label: 'Loans', icon: '💵', shortLabel: 'Loan' },
-    { id: 'islamic', label: 'Islamic Loans', icon: '🕌', shortLabel: 'Islamic' },
+    { id: 'bank', label: 'Bank Accounts', icon: '🏦', shortLabel: 'Bank' },
+    { id: 'islamic', label: 'Islamic Finance', icon: '🕌', shortLabel: 'Islamic' },
     { id: 'investment', label: 'Investment', icon: '📈', shortLabel: 'Inv' },
     { id: 'collection', label: 'Collection', icon: '💳', shortLabel: 'Coll' },
     { id: 'collector', label: 'Collectors', icon: '👥', shortLabel: 'Collr' },
@@ -267,8 +267,71 @@ const SomitySettingsPage: React.FC = () => {
         {activeTab === 'member' && (
           <MemberSettings settings={settings} updateSettings={updateSettings} />
         )}
-        {activeTab === 'loan' && (
-          <LoanSettings settings={settings} updateSettings={updateSettings} />
+        {activeTab === 'bank' && (
+          <div className="space-y-6">
+            <BankSettings
+              bankAccounts={settings.bankAccounts || []}
+              onUpdate={(bankAccounts) => updateSettings({ bankAccounts })}
+              title="Somity Bank Accounts"
+              description="Add and manage the official bank accounts for this somity."
+              addLabel="Add Somity Account"
+            />
+
+            <section className="space-y-4">
+              <div className="px-1 py-2 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Collector Bank Accounts</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Allow collectors to use their own bank accounts for collection deposits.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateSettings({
+                    collectorBanking: {
+                      useCollectorBankAccounts: !(settings.collectorBanking?.useCollectorBankAccounts ?? false),
+                      collectorBankAccounts: settings.collectorBanking?.collectorBankAccounts || [],
+                    },
+                  })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    settings.collectorBanking?.useCollectorBankAccounts ? 'bg-emerald-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings.collectorBanking?.useCollectorBankAccounts ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              {settings.collectorBanking?.useCollectorBankAccounts ? (
+                <BankSettings
+                  bankAccounts={settings.collectorBanking?.collectorBankAccounts || []}
+                  onUpdate={(collectorBankAccounts) => updateSettings({
+                    collectorBanking: {
+                      useCollectorBankAccounts: true,
+                      collectorBankAccounts,
+                    },
+                  })}
+                    title="Collector Bank Accounts"
+                    description="Add bank accounts collectors can use when collector banking is enabled."
+                    addLabel="Add Collector Account"
+                    collectorOptions={(settings.collection?.collectorSettings?.collectors || [])
+                      .filter((collector: any) => collector.isActive)
+                      .map((collector: any) => ({
+                        id: collector.id,
+                        memberId: collector.memberId,
+                        memberName: collector.memberName,
+                      }))}
+                    requireCollector
+                  />
+              ) : (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+                  Collector bank account use is off. Turn it on to add collector bank accounts.
+                </div>
+              )}
+            </section>
+          </div>
         )}
         {activeTab === 'islamic' && (
           <IslamicLoanSettings settings={settings} updateSettings={updateSettings} />

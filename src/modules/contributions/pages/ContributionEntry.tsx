@@ -32,6 +32,7 @@ import CollectorSelect from '../components/CollectorSelect';
 
 
 import type { CollectorAssignment } from '../../../types';
+import type { BankAccount } from '../../../types/settings';
 
 // Types
 interface SimpleMember extends MemberCardSimpleMember {
@@ -62,6 +63,8 @@ interface FormData {
   payType: PayType;
   collectionStatus: CollectionStatusType;
   bankName: string;
+  bankAccountId: string;
+  bankAccountName: string;
   bankReference: string;
   depositDate: string;
   depositorName: string;
@@ -80,6 +83,8 @@ const INITIAL_FORM_DATA: FormData = {
   payType: 'cash',
   collectionStatus: 'collected',
   bankName: '',
+  bankAccountId: '',
+  bankAccountName: '',
   bankReference: '',
   depositDate: new Date().toISOString().split('T')[0],
   depositorName: '',
@@ -125,6 +130,23 @@ const ContributionEntry: React.FC = () => {
   const collectorSettings = settings?.collection?.collectorSettings;
   const collectorEnabled = collectorSettings?.enabled ?? false;
   const activeCollectors: CollectorAssignment[] = collectorSettings?.collectors?.filter((c: CollectorAssignment) => c.isActive) || [];
+  const selectedCollector = activeCollectors.find(c => c.id === selectedCollectorId);
+  const somityBankAccounts: BankAccount[] = (settings?.bankAccounts || []).filter((account: BankAccount) => account.isActive);
+  const collectorBankAccounts: BankAccount[] = settings?.collectorBanking?.useCollectorBankAccounts
+    ? (settings?.collectorBanking?.collectorBankAccounts || []).filter((account: BankAccount) =>
+        account.isActive && selectedCollector?.memberId && account.collectorMemberId === selectedCollector.memberId
+      )
+    : [];
+  const bankAccountsForSelection: BankAccount[] =
+    formData.payType === 'bank' && formData.collectionStatus === 'collected'
+      ? collectorBankAccounts
+      : formData.collectionStatus === 'deposited'
+      ? somityBankAccounts
+      : [];
+  const bankAccountContextLabel =
+    formData.payType === 'bank' && formData.collectionStatus === 'collected'
+      ? 'Collector bank account'
+      : 'Somity bank account';
 
   const { startMonth: somityStartMonth, startYear: somityStartYear } = parseFiscalYearStart(
     settings?.financial?.fiscalYearStart || 'July-2021'
@@ -236,6 +258,16 @@ const ContributionEntry: React.FC = () => {
     setShowDepositorList(false);
   };
 
+  const handleSelectBankAccount = (accountId: string) => {
+    const account = bankAccountsForSelection.find(item => item.id === accountId);
+    setFormData(prev => ({
+      ...prev,
+      bankAccountId: account?.id || '',
+      bankAccountName: account?.accountName || '',
+      bankName: account ? `${account.bankName} - ${account.accountName}` : '',
+    }));
+  };
+
   const handleClearMember = () => {
     setSelectedMember(null);
     setFeeStatus(null);
@@ -259,6 +291,7 @@ const ContributionEntry: React.FC = () => {
       totalAmount: formData.totalAmount,
       payType: formData.payType,
       collectionStatus: formData.collectionStatus,
+      bankAccountId: formData.bankAccountId,
       bankName: formData.bankName,
       bankReference: formData.bankReference,
       paymentDate: formData.paymentDate,
@@ -285,8 +318,6 @@ const ContributionEntry: React.FC = () => {
       const currentUserId = user?.uid || 'system';
       
       // Selected collector (who collected the money from member)
-      const selectedCollector = activeCollectors.find(c => c.id === selectedCollectorId);
-
       const result = await feesService.addFeePayment({
         // Member info
         memberId: selectedMember.memberId,
@@ -318,6 +349,8 @@ const ContributionEntry: React.FC = () => {
         
         // Collection status
         collectionStatus: formData.collectionStatus,
+        bankAccountId: formData.bankAccountId || undefined,
+        bankAccountName: formData.bankAccountName || undefined,
         bankName: formData.bankName || undefined,
         bankReference: formData.bankReference || undefined,
         depositDate: shouldShowBankDepositFields ? formData.depositDate : undefined,
@@ -429,7 +462,13 @@ const ContributionEntry: React.FC = () => {
                       <PaymentMethodSelector
                         allowedMethods={allowedPaymentMethods}
                         selectedMethod={formData.payType}
-                        onSelect={(method) => setFormData(prev => ({ ...prev, payType: method as PayType }))}
+                        onSelect={(method) => setFormData(prev => ({
+                          ...prev,
+                          payType: method as PayType,
+                          bankAccountId: '',
+                          bankAccountName: '',
+                          bankName: '',
+                        }))}
                       />
                     </div>
 
@@ -450,14 +489,42 @@ const ContributionEntry: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Collector Selection - needed before collector bank account filtering */}
+                    {collectorEnabled && (
+                      <CollectorSelect
+                        collectors={activeCollectors}
+                        selectedCollectorId={selectedCollectorId}
+                        onSelect={(collectorId) => {
+                          setSelectedCollectorId(collectorId);
+                          setFormData(prev => ({
+                            ...prev,
+                            bankAccountId: '',
+                            bankAccountName: '',
+                            bankName: '',
+                          }));
+                        }}
+                        isRequired={activeCollectors.length > 0}
+                      />
+                    )}
+
                     {/* Collection Status */}
                     <CollectionStatusSection
                       collectionStatus={formData.collectionStatus}
                       payType={formData.payType}
                       bankName={formData.bankName}
                       bankReference={formData.bankReference}
-                      onStatusChange={(status) => setFormData(prev => ({ ...prev, collectionStatus: status }))}
+                      bankAccounts={bankAccountsForSelection}
+                      selectedBankAccountId={formData.bankAccountId}
+                      bankAccountContextLabel={bankAccountContextLabel}
+                      onStatusChange={(status) => setFormData(prev => ({
+                        ...prev,
+                        collectionStatus: status,
+                        bankAccountId: '',
+                        bankAccountName: '',
+                        bankName: '',
+                      }))}
                       onBankInfoChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+                      onBankAccountSelect={handleSelectBankAccount}
                     />
 
                     {shouldShowBankDepositFields && (
@@ -548,16 +615,6 @@ const ContributionEntry: React.FC = () => {
                       numberOfMonths={formData.numberOfMonths}
                       totalAmount={formData.totalAmount}
                     />
-
-                    {/* Collector Selection - Only show if enabled */}
-                    {collectorEnabled && (
-                      <CollectorSelect
-                        collectors={activeCollectors}
-                        selectedCollectorId={selectedCollectorId}
-                        onSelect={setSelectedCollectorId}
-                        isRequired={activeCollectors.length > 0}
-                      />
-                    )}
 
                     {/* Selected Collector Info - Blue background */}
                     {collectorEnabled && selectedCollectorId && (

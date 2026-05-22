@@ -9,6 +9,7 @@ interface BankInfoFieldsProps {
   required?: boolean;
   showLabel?: boolean;
   className?: string;
+  readOnlyBankName?: boolean;
   placeholder?: {
     bankName?: string;
     bankReference?: string;
@@ -22,6 +23,7 @@ const BankInfoFields: React.FC<BankInfoFieldsProps> = ({
   required = false,
   showLabel = true,
   className = '',
+  readOnlyBankName = false,
   placeholder = {
     bankName: 'যেমন: Islami Bank, DBBL, Sonali Bank',
     bankReference: 'স্লিপ নং / চেক নং / ট্রানজেকশন আইডি'
@@ -42,9 +44,10 @@ const BankInfoFields: React.FC<BankInfoFieldsProps> = ({
             type="text"
             value={bankName}
             onChange={(e) => onChange('bankName', e.target.value)}
+            readOnly={readOnlyBankName}
             className={`w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
               required && !bankName ? 'border-red-300 bg-red-50' : ''
-            }`}
+            } ${readOnlyBankName ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             placeholder={placeholder.bankName}
           />
         </div>

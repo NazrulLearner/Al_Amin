@@ -9,6 +9,8 @@ import { useAuth } from '../../../../app/providers/AuthProvider';
 import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
 import { memberService } from '../../services/memberService';
 import type { Member, UserRole, MemberStatus } from '../../../../types';
+import { collections } from '../../../../services/firebase/firebaseCollections';
+import { getDocs, query, where, updateDoc, Timestamp } from 'firebase/firestore';
 
 interface EditMemberProps {
   memberId: string;
@@ -86,6 +88,24 @@ const EditMember = ({ memberId, isOpen, onClose, onSuccess }: EditMemberProps) =
   const minShare = shareSettings?.minShare || 1;
   const perShareValue = shareSettings?.perShareValue || 1000;
 
+  const syncUserRoleByMemberId = async (targetMemberId: string, role: UserRole) => {
+    const usersQuery = query(collections.users(), where('memberId', '==', targetMemberId));
+    const userSnapshot = await getDocs(usersQuery);
+    await Promise.all(userSnapshot.docs.map(userDoc =>
+      updateDoc(userDoc.ref, {
+        role,
+        updatedAt: Timestamp.now(),
+      })
+    ));
+  };
+
+  const getLinkedUserRole = async (targetMemberId: string): Promise<UserRole | null> => {
+    const usersQuery = query(collections.users(), where('memberId', '==', targetMemberId));
+    const userSnapshot = await getDocs(usersQuery);
+    if (userSnapshot.empty) return null;
+    return (userSnapshot.docs[0].data().role as UserRole) || null;
+  };
+
   useEffect(() => {
     if (!isOpen) {
       setPhotoFile(null); setSignatureFile(null);
@@ -103,6 +123,7 @@ const EditMember = ({ memberId, isOpen, onClose, onSuccess }: EditMemberProps) =
       setLoading(true);
       const memberData = await memberService.getMemberById(memberId);
       if (memberData) {
+        const linkedUserRole = await getLinkedUserRole(memberData.memberId || memberId);
         const loadedFormData: FormData = {
           firstName: memberData.firstName || '',
           middleName: memberData.middleName || '',
@@ -133,7 +154,7 @@ const EditMember = ({ memberId, isOpen, onClose, onSuccess }: EditMemberProps) =
           perShareFee: memberData.membership?.perShareFee || perShareValue,
           monthlyFee: memberData.membership?.monthlyFee || 1000,
           position: memberData.membership?.position || 'General Member',
-          role: (memberData.membership?.role as UserRole) || 'member',
+          role: linkedUserRole || (memberData.membership?.role as UserRole) || 'member',
           status: (memberData.membership?.status as MemberStatus) || 'active',
           dateOfJoin: memberData.membership?.dateOfJoin || new Date().toISOString().split('T')[0],
           totalFeesPaid: memberData.financials?.totalFeesPaid || 0,
@@ -255,6 +276,7 @@ const EditMember = ({ memberId, isOpen, onClose, onSuccess }: EditMemberProps) =
       };
 
       await memberService.updateMember(memberId, updateData, user?.uid || 'system');
+      await syncUserRoleByMemberId(memberId, formData.role);
 
       if (photoFile) {
         await memberService.updateMemberPhoto(memberId, photoFile, user?.uid || 'system');
@@ -594,7 +616,7 @@ const EditMember = ({ memberId, isOpen, onClose, onSuccess }: EditMemberProps) =
                       <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                       <select value={formData.role} onChange={(e) => handleInputChange('role', e.target.value as UserRole)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                        <option value="member">Member</option><option value="cashier">Cashier</option>
+                        <option value="member">Member</option><option value="collector">Collector</option><option value="cashier">Cashier</option>
                         <option value="admin">Admin</option><option value="manager">Manager</option>
                         <option value="accountant">Accountant</option>
                       </select>

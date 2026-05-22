@@ -37,6 +37,8 @@ export const feesService = {
       enteredByName?: string;
       enteredByMemberId?: string;
       collectionStatus?: string;
+      bankAccountId?: string;
+      bankAccountName?: string;
       bankName?: string;
       bankReference?: string;
       collectorId?: string;
@@ -161,6 +163,8 @@ export const feesService = {
         // 🏦 DEPOSIT INFO (Flat - Root Level)
         // ============================================
         depositBankName: request.bankName || null,
+        depositBankAccountId: request.bankAccountId || null,
+        depositBankAccountName: request.bankAccountName || null,
         depositDate: depositDate,
         depositorName: request.depositorName || null,
         depositorId: request.depositorId || null,

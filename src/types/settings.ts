@@ -28,6 +28,9 @@ export interface BankAccount {
   bankName: string;
   accountName: string;
   accountNumber: string;
+  collectorId?: string;
+  collectorMemberId?: string;
+  collectorName?: string;
   branchName?: string;
   routingNumber?: string;
   swiftCode?: string;
@@ -67,6 +70,11 @@ export interface PersonalAccount {
 
 export interface SomitySettings {
   general: GeneralSettings;
+  bankAccounts?: BankAccount[];
+  collectorBanking?: {
+    useCollectorBankAccounts: boolean;
+    collectorBankAccounts: BankAccount[];
+  };
   share: {
     perShareValue: number;
     minShare: number;
@@ -261,6 +269,11 @@ export const DEFAULT_SOMITY_SETTINGS: SomitySettings = {
     watermarkOpacity: 0.1,
     watermarkEnabled: true,
     watermarkRotation: -12  // 👈 ডিফল্ট -12 ডিগ্রী (বাঁ দিকে ঘোরানো)
+  },
+  bankAccounts: [],
+  collectorBanking: {
+    useCollectorBankAccounts: false,
+    collectorBankAccounts: []
   },
   share: {
     perShareValue: 1000,

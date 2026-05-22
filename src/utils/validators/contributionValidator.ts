@@ -17,6 +17,7 @@ export interface ContributionValidationParams {
   totalAmount: number;
   payType: 'cash' | 'bank' | 'bikash' | 'nogod' | 'rocket' | 'other';
   collectionStatus: 'collected' | 'deposited' | 'transferred';
+  bankAccountId?: string;
   bankName?: string;
   bankReference?: string;
   depositDate?: string;
@@ -69,6 +70,14 @@ export const validateContributionEntry = (
     params.bankReference
   );
   errors.push(...collectionErrors);
+
+  if (params.collectionStatus === 'deposited' && !params.bankAccountId) {
+    errors.push('দয়া করে সমিতির ব্যাংক অ্যাকাউন্ট নির্বাচন করুন');
+  }
+
+  if (params.payType === 'bank' && params.collectionStatus === 'collected' && !params.bankAccountId) {
+    errors.push('দয়া করে ব্যাংক অ্যাকাউন্ট নির্বাচন করুন');
+  }
 
   if (params.collectionStatus === 'deposited' && params.payType === 'bank') {
     if (!params.depositDate) {

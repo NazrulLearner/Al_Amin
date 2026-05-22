@@ -7,9 +7,22 @@ import type { BankAccount } from '../../../types/settings';
 interface BankSettingsProps {
   bankAccounts: BankAccount[];
   onUpdate: (accounts: BankAccount[]) => void;
+  title?: string;
+  description?: string;
+  addLabel?: string;
+  collectorOptions?: Array<{ id: string; memberId: string; memberName: string }>;
+  requireCollector?: boolean;
 }
 
-const BankSettings: React.FC<BankSettingsProps> = ({ bankAccounts = [], onUpdate }) => {
+const BankSettings: React.FC<BankSettingsProps> = ({
+  bankAccounts = [],
+  onUpdate,
+  title = 'Bank Accounts',
+  description = 'Add and manage bank accounts',
+  addLabel = 'Add Account',
+  collectorOptions = [],
+  requireCollector = false,
+}) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showAccountNumbers, setShowAccountNumbers] = useState<Record<string, boolean>>({});
@@ -23,6 +36,10 @@ const BankSettings: React.FC<BankSettingsProps> = ({ bankAccounts = [], onUpdate
   const [formData, setFormData] = useState<BankAccount>(emptyAccount);
 
   const handleSave = () => {
+    if (requireCollector && !formData.collectorMemberId) {
+      toast.error('Please select which collector owns this account');
+      return;
+    }
     if (!formData.bankName || !formData.accountName || !formData.accountNumber) {
       toast.error('ব্যাংকের নাম, অ্যাকাউন্টের নাম ও নম্বর আবশ্যক');
       return;
@@ -71,14 +88,14 @@ const BankSettings: React.FC<BankSettingsProps> = ({ bankAccounts = [], onUpdate
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-white flex justify-between items-center">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">🏦 ব্যাংক অ্যাকাউন্ট সমূহ</h2>
-          <p className="text-sm text-gray-500 mt-1">সমিতির ব্যাংক অ্যাকাউন্ট যোগ ও পরিচালনা করুন</p>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <p className="text-sm text-gray-500 mt-1">{description}</p>
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingId(null); setFormData(emptyAccount); }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
         >
-          <Plus className="h-4 w-4" /> অ্যাকাউন্ট যোগ করুন
+          <Plus className="h-4 w-4" /> {addLabel}
         </button>
       </div>
 
@@ -95,6 +112,9 @@ const BankSettings: React.FC<BankSettingsProps> = ({ bankAccounts = [], onUpdate
                   <div>
                     <h4 className="font-semibold text-gray-900">{account.bankName}</h4>
                     <p className="text-sm text-gray-500">{account.accountName}</p>
+                    {account.collectorName && (
+                      <p className="text-xs text-emerald-600 mt-0.5">Collector: {account.collectorName}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -156,6 +176,31 @@ const BankSettings: React.FC<BankSettingsProps> = ({ bankAccounts = [], onUpdate
               </div>
               
               <div className="p-6 space-y-4">
+                {requireCollector && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Collector *</label>
+                    <select
+                      value={formData.collectorMemberId || ''}
+                      onChange={(e) => {
+                        const collector = collectorOptions.find(c => c.memberId === e.target.value);
+                        setFormData(prev => ({
+                          ...prev,
+                          collectorId: collector?.id || '',
+                          collectorMemberId: collector?.memberId || '',
+                          collectorName: collector?.memberName || '',
+                        }));
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    >
+                      <option value="">Select collector</option>
+                      {collectorOptions.map(collector => (
+                        <option key={collector.id} value={collector.memberId}>
+                          {collector.memberName} ({collector.memberId})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ব্যাংকের নাম *</label>
                   <input type="text" value={formData.bankName} onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}

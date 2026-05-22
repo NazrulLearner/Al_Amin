@@ -77,11 +77,10 @@ const CollectorSettings: React.FC<CollectorSettingsProps> = ({ settings, updateS
       const usersQuery = query(collections.users(), where('memberId', '==', memberId));
       const userSnapshot = await getDocs(usersQuery);
       if (!userSnapshot.empty) {
-        const userDoc = userSnapshot.docs[0];
-        await updateDoc(userDoc.ref, {
+        await Promise.all(userSnapshot.docs.map(userDoc => updateDoc(userDoc.ref, {
           role,
           updatedAt: Timestamp.now(),
-        });
+        })));
       }
     } catch (error) {
       console.warn(`Could not sync role to users collection for member ${memberId}:`, error);

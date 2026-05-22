@@ -6,14 +6,19 @@ import {
 } from 'lucide-react';
 import { getCollectionStatusInfo } from '../../../utils/calculations/contributionCalculator';
 import BankInfoFields from '../../../shared/components/Common/BankInfoFields';
+import type { BankAccount } from '../../../types/settings';
 
 interface CollectionStatusSectionProps {
   collectionStatus: 'collected' | 'deposited' | 'transferred';
   payType: string;
   bankName: string;
   bankReference: string;
+  bankAccounts?: BankAccount[];
+  selectedBankAccountId?: string;
+  bankAccountContextLabel?: string;
   onStatusChange: (status: 'collected' | 'deposited' | 'transferred') => void;
   onBankInfoChange: (field: 'bankName' | 'bankReference', value: string) => void;
+  onBankAccountSelect?: (accountId: string) => void;
 }
 
 const STATUS_ICONS = {
@@ -27,8 +32,12 @@ const CollectionStatusSection: React.FC<CollectionStatusSectionProps> = ({
   payType,
   bankName,
   bankReference,
+  bankAccounts = [],
+  selectedBankAccountId = '',
+  bankAccountContextLabel = 'Bank account',
   onStatusChange,
   onBankInfoChange,
+  onBankAccountSelect,
 }) => {
   const statusInfo = getCollectionStatusInfo(collectionStatus, payType);
   const statuses: ('collected' | 'deposited' | 'transferred')[] = ['collected', 'deposited', 'transferred'];
@@ -107,11 +116,37 @@ const CollectionStatusSection: React.FC<CollectionStatusSectionProps> = ({
               </p>
             </div>
           )}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {bankAccountContextLabel} <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={selectedBankAccountId}
+              onChange={(e) => onBankAccountSelect?.(e.target.value)}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                !selectedBankAccountId ? 'border-red-300 bg-red-50' : ''
+              }`}
+            >
+              <option value="">Select account</option>
+              {bankAccounts.map(account => (
+                <option key={account.id} value={account.id}>
+                  {account.bankName} - {account.accountName} ({account.accountNumber.slice(-4)})
+                  {account.collectorName ? ` - ${account.collectorName}` : ''}
+                </option>
+              ))}
+            </select>
+            {bankAccounts.length === 0 && (
+              <p className="text-xs text-red-600 mt-1">
+                No active account found for this selection. Add it from Settings first.
+              </p>
+            )}
+          </div>
           <BankInfoFields
             bankName={bankName}
             bankReference={bankReference}
             onChange={onBankInfoChange}
             required={collectionStatus === 'deposited'}
+            readOnlyBankName
             placeholder={{
               bankName:
                 payType === 'bank' && collectionStatus === 'collected'
