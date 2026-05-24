@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { useAuth } from '../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../app/context/SomitySettingsProvider';
 import { Printer, X } from 'lucide-react';
 
 interface PrintLayoutProps {

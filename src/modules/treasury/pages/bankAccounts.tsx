@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { bankService } from '../services/bank.service';
 import { 
   Plus, Building2, Landmark, Wallet, 

@@ -1,6 +1,6 @@
 // src/components/Loans/Application/LoanDetails/KafalahForm.tsx
 import React, { useState, useEffect } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { DollarSign, Calendar, Users } from 'lucide-react';
 
 interface KafalahFormProps {

@@ -6,7 +6,7 @@ import { bankService } from '../../services/bank.service';
 import type { BankAccount } from '../../types';
 
 interface AccountSelectorProps {
-  type: 'bank' | 'cash';
+  type: 'bank' | 'cash' | 'cashier';
   value: string;
   onChange: (value: string) => void;
   label?: string;
@@ -45,7 +45,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
     }
   };
 
-  if (type === 'cash') {
+  if (type === 'cash' || type === 'cashier') {
     return (
       <div>
         {label && (

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { financeService } from '../services/financeService';
 import { 
   Loader2, ArrowLeft, Landmark} from 'lucide-react';

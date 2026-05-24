@@ -1,6 +1,6 @@
 // src/pages/fees/FeesReports.tsx
 import React, { useState, useEffect } from 'react';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { feesService } from '../services/contributionService';
 import { 
   Download, 

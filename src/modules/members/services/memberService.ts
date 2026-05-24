@@ -41,6 +41,7 @@ export const getMemberDocRef = (memberId: string) => {
 export interface CreateMemberParams {
   id?: string;
   uid?: string;
+  personal?: any;
   memberId: string;
   firstName: string;
   middleName?: string;
@@ -143,6 +144,7 @@ export const createMember = async (
     const memberUid = params.id || params.uid || null;
     
     const member: Member = {
+      personal: params.personal || {},
       id: memberUid || '',
       memberId: params.memberId,
       uid: memberUid,

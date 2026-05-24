@@ -1,6 +1,6 @@
 // src/components/Loans/Application/LoanDetails/IjarahForm.tsx
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { DollarSign, Calendar, Home, Shield, Car, Building2 } from 'lucide-react';
 
 interface IjarahFormProps {

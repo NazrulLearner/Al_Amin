@@ -1,93 +1,43 @@
-import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
-import ProtectedRoute from "../../app/routes/ProtectedRoute";
+import { lazy } from 'react';
+import type { RouteObject } from 'react-router-dom';
 
-const FinancingDashboard = lazy(() => import("./pages/FinancingDashboardPage"));
-const FinancingList = lazy(() => import("./pages/FinancingListPage"));
-const CreateFinancing = lazy(() => import("./pages/CreateFinancingPage"));
-const ActiveFinancing = lazy(() => import("./pages/ActiveFinancingPage"));
-const PendingFinancing = lazy(() => import("./pages/PendingFinancingPage"));
-const CompletedFinancing = lazy(() => import("./pages/CompletedFinancingPage"));
-const FinancingHistory = lazy(() => import("./pages/FinancingHistoryPage"));
-const FinancingReport = lazy(() => import("./pages/FinancingReportPage"));
-const FinancingDetails = lazy(() => import("./pages/FinancingDetailsPage"));
+// Lazy load all pages for better performance
+const FinancingDashboardPage = lazy(() => import('./pages/FinancingDashboardPage'));
+const FinancingListPage = lazy(() => import('./pages/FinancingListPage'));
+const CreateFinancingPage = lazy(() => import('./pages/CreateFinancingPage'));
+const FinancingDetailsPage = lazy(() => import('./pages/FinancingDetailsPage'));
+const ActiveFinancingPage = lazy(() => import('./pages/ActiveFinancingPage'));
+const CompletedFinancingPage = lazy(() => import('./pages/CompletedFinancingPage'));
+const PendingFinancingPage = lazy(() => import('./pages/PendingFinancingPage'));
+const FinancingHistoryPage = lazy(() => import('./pages/FinancingHistoryPage'));
+const FinancingReportPage = lazy(() => import('./pages/FinancingReportPage'));
+const FinancingApplicationDetailsPage = lazy(() => import('./pages/FinancingApplicationDetailsPage'));
+const PendingFinancingApplicationsPage = lazy(() => import('./pages/PendingFinancingApplicationsPage'));
 
 export const financingRoutes: RouteObject[] = [
   {
-    path: "financing",
+    path: 'financing',
     children: [
-      {
-        index: true,
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-            <FinancingDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "list",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member"]}>
-            <FinancingList />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "create",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-            <CreateFinancing />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "active",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-            <ActiveFinancing />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "pending",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <PendingFinancing />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "completed",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-            <CompletedFinancing />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "history",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member"]}>
-            <FinancingHistory />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "reports",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <FinancingReport />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ":id",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member"]}>
-            <FinancingDetails />
-          </ProtectedRoute>
-        ),
-      },
+      // Overview/Dashboard - index like behavior
+      { index: true, element: <FinancingDashboardPage /> },
+      
+      // Main financing routes
+      { path: 'list', element: <FinancingListPage /> },
+      { path: 'create', element: <CreateFinancingPage /> },
+      { path: ':id', element: <FinancingDetailsPage /> },
+      
+      // Status based routes
+      { path: 'active', element: <ActiveFinancingPage /> },
+      { path: 'completed', element: <CompletedFinancingPage /> },
+      { path: 'pending', element: <PendingFinancingPage /> },
+      
+      // History and Reports
+      { path: 'history', element: <FinancingHistoryPage /> },
+      { path: 'reports', element: <FinancingReportPage /> },
+      
+      // Applications
+      { path: 'applications/pending', element: <PendingFinancingApplicationsPage /> },
+      { path: 'applications/:id', element: <FinancingApplicationDetailsPage /> },
     ],
   },
 ];

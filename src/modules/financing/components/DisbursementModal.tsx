@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { loanService } from '../services/FinancingService';
 import { 
   DollarSign, Landmark, Wallet, Clock, Hash, FileText, 

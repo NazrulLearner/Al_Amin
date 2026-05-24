@@ -1,6 +1,6 @@
 // src/components/Loans/Application/LoanDetails/IstisnaForm.tsx
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { SchemaValidator } from '../../utils/schemaValidator';
 import { Calendar, DollarSign } from 'lucide-react';
 

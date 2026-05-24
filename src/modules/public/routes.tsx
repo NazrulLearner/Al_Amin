@@ -1,25 +1,23 @@
-import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
+import { lazy } from 'react';
+import type { RouteObject } from 'react-router-dom';
 
-const WelcomePage = lazy(() => import("./pages/WelcomePage"));
-const AboutPage = lazy(() => import("./pages/AboutPage"));
-const ContactPage = lazy(() => import("./pages/ContactPage"));
+const WelcomePage = lazy(() => import('./pages/WelcomePage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
 
 export const publicRoutes: RouteObject[] = [
   {
-    path: "/",
+    path: '/welcome',
     element: <WelcomePage />,
   },
   {
-    path: "welcome",
-    element: <WelcomePage />,
-  },
-  {
-    path: "about",
+    path: '/about',
     element: <AboutPage />,
   },
   {
-    path: "contact",
+    path: '/contact',
     element: <ContactPage />,
   },
 ];
+
+export default publicRoutes;

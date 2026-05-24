@@ -1,7 +1,7 @@
 // src/pages/fees/FeesHistory.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { useNavigate } from 'react-router-dom';
 import { feesService } from '../services/contributionService';
 import { formatDateWithFormat } from '../../../utils/formatters/dateFormatter';
@@ -152,7 +152,7 @@ const DeleteConfirmModal: React.FC<{
           <div className="bg-gray-50 p-3 rounded-lg mb-4">
             <p className="text-sm"><strong>রসিদ নম্বর:</strong> {transaction.receiptId}</p>
             <p className="text-sm"><strong>সদস্য:</strong> {transaction.memberName}</p>
-            <p className="text-sm"><strong>পরিমাণ:</strong> {formatAmount(transaction.feeAmount)}</p>
+            <p className="text-sm"><strong>পরিমাণ:</strong> {formatCurrencyWithSettings(transaction.feeAmount)}</p>
             <p className="text-sm"><strong>তারিখ:</strong> {new Date(transaction.createdAt).toLocaleDateString()}</p>
           </div>
           <p className="text-sm text-red-600 mb-4">
@@ -258,10 +258,6 @@ const FeesHistory: React.FC = () => {
     return transaction.paymentDate || transaction.createdAt;
   };
 
-  const formatAmount = (amount: number) => {
-    return formatCurrencyWithSettings(amount, settings?.financial);
-  };
-
   // Only admin can edit/delete
   const canEditDelete = userData?.role === 'admin' || userData?.role === 'super_admin';
 
@@ -299,7 +295,7 @@ const FeesHistory: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">মোট জমা</p>
-            <p className="text-2xl font-bold text-green-600">{formatAmount(transactions.reduce((sum, t) => sum + t.feeAmount, 0))}</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrencyWithSettings(transactions.reduce((sum, t) => sum + t.feeAmount, 0))}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">মোট লেনদেন</p>
@@ -308,7 +304,7 @@ const FeesHistory: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">এই মাসে</p>
             <p className="text-2xl font-bold text-purple-600">
-              {formatAmount(transactions.filter(t => {
+              {formatCurrencyWithSettings(transactions.filter(t => {
                 const date = getTransactionDate(t) instanceof Date ? getTransactionDate(t) : new Date(getTransactionDate(t));
                 return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
               }).reduce((sum, t) => sum + t.feeAmount, 0))}
@@ -317,7 +313,7 @@ const FeesHistory: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <p className="text-sm text-gray-500">গত মাসে</p>
             <p className="text-2xl font-bold text-amber-600">
-              {formatAmount(transactions.filter(t => {
+              {formatCurrencyWithSettings(transactions.filter(t => {
                 const date = getTransactionDate(t) instanceof Date ? getTransactionDate(t) : new Date(getTransactionDate(t));
                 const lastMonth = new Date();
                 lastMonth.setMonth(lastMonth.getMonth() - 1);
@@ -351,7 +347,7 @@ const FeesHistory: React.FC = () => {
                       <p className="font-medium">{transaction.memberName}</p>
                       <p className="text-xs text-gray-500">{transaction.memberId}</p>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-green-600">{formatAmount(transaction.feeAmount)}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-green-600">{formatCurrencyWithSettings(transaction.feeAmount)}</td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                         {transaction.payType}

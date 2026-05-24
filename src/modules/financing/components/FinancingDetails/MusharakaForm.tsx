@@ -1,6 +1,6 @@
 // src/components/Loans/Application/LoanDetails/MusharakaForm.tsx
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { DollarSign, Calendar, TrendingUp } from 'lucide-react';
 
 interface MusharakaFormProps {

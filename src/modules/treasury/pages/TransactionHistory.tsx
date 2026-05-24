@@ -1,7 +1,7 @@
 // src/modules/finance/pages/history.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { financeService } from '../services/financeService';
 import { 
   Search, 

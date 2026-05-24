@@ -53,7 +53,6 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({
 
       {/* Tabs Navigation */}
       <ProfileTabs
-        tabs={tabs}
         activeTab={activeTab}
         onTabChange={onTabChange}
       />

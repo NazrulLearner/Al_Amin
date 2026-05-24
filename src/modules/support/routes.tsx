@@ -1,38 +1,17 @@
 import { lazy } from "react";
-import ProtectedRoute from "../../app/routes/ProtectedRoute";
+import type { RouteObject } from "react-router-dom";
 
 const SupportHome = lazy(() => import("./pages/index"));
 const FAQ = lazy(() => import("./pages/faq"));
 const About = lazy(() => import("./pages/about"));
 
-export const supportRoutes = [
+export const supportRoutes: RouteObject[] = [
   {
-    path: "support",
+    path: "support",  // NO leading slash
     children: [
-      {
-        index: true,
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member", "collector"]}>
-            <SupportHome />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "faq",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member", "collector"]}>
-            <FAQ />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "about",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member", "collector"]}>
-            <About />
-          </ProtectedRoute>
-        ),
-      },
+      { index: true, element: <SupportHome /> },
+      { path: "faq", element: <FAQ /> },
+      { path: "about", element: <About /> },
     ],
   },
 ];

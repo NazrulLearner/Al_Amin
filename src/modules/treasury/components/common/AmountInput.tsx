@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { DollarSign } from 'lucide-react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 
 interface AmountInputProps {
   value: number;

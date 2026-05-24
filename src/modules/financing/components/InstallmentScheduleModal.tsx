@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Calendar, DollarSign, AlertCircle, Clock, User } from 'lucide-react';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { getFrequencyLabel } from '../utils/installmentCalculator';
 import PrintLayout from '../../../shared/export/PrintLayout';
 

@@ -50,7 +50,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({ settings, updateSetti
   const [uploading, setUploading] = useState(false);
 
   // 🔥 সরাসরি settings থেকে value নিচ্ছি, কোনো local state না
-  const general = settings.general || {};
+  const general = settings.general;
 
   // Handle general field change
   const handleChange = (field: string, value: any) => {

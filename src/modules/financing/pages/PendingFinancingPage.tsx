@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { loanService } from '../services/FinancingService';
 import { CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';

@@ -1,5 +1,7 @@
-// src/app/routes/RouteRegistry.ts
 import type { RouteObject } from "react-router-dom";
+import DashboardLayout from "../layouts/DashboardLayout";
+import DashboardRedirect from "../layouts/DashboardRedirect";
+import ProtectedRoute from "../layouts/ProtectedRoute";
 
 // সব মডিউল ইমপোর্ট
 import { teamRoutes } from "../../modules/teams/routes";
@@ -16,20 +18,40 @@ import { cashierRoutes } from "../../modules/cashier/routes";
 import { communicationRoutes } from "../../modules/communication/routes";
 import { supportRoutes } from "../../modules/support/routes";
 import { investmentRoutes } from "../../modules/Investments/routes";
+import { dashboardRoutes } from "../../modules/dashboards/routes";
+import { publicRoutes } from "../../modules/public/routes";
+import { authRoutes } from "../../modules/auth/routes";
 
 export const RouteRegistry: RouteObject[] = [
-  ...teamRoutes,
-  ...membersRoutes,
-  ...financingRoutes,
-  ...treasuryRoutes,
-  ...reportsRoutes,
-  ...settingsRoutes,
-  ...usersRoutes,
-  ...superAdminRoutes,
-  ...contributionRoutes,
-  ...businessRoutes,
-  ...cashierRoutes,
-  ...communicationRoutes,
-  ...supportRoutes,
-  ...investmentRoutes,
+  ...publicRoutes,
+  ...authRoutes,
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <DashboardRedirect />,
+      },
+      ...dashboardRoutes,
+      ...teamRoutes,
+      ...membersRoutes,
+      ...financingRoutes,
+      ...treasuryRoutes,
+      ...reportsRoutes,
+      ...settingsRoutes,
+      ...usersRoutes,
+      ...superAdminRoutes,
+      ...contributionRoutes,
+      ...businessRoutes,
+      ...cashierRoutes,
+      ...communicationRoutes,
+      ...supportRoutes,
+      ...investmentRoutes,
+    ],
+  },
 ];

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import Step1Applicant from '../components/CreateFinance/step1';
 import Step2LoanType from '../components/CreateFinance/step2';
 import Step3Finalization from '../components/CreateFinance/step3';

@@ -1,7 +1,7 @@
 // src/modules/finance/components/common/FinanceStatsCard.tsx
 
 import React from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 
 interface FinanceStatsCardProps {
   title: string;

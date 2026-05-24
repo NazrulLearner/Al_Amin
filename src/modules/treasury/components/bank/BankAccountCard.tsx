@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { Landmark, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import type { BankAccount } from '../../types';
 

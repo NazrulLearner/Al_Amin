@@ -1,6 +1,6 @@
 // src/modules/finance/services/cash.service.ts
 
-import { doc, getDoc, updateDoc, increment, Timestamp } from 'firebase/firestore';
+import { getDoc, updateDoc, setDoc, increment } from 'firebase/firestore';
 import { collections } from '../../../services/firebase/firebaseCollections';
 import { bankService } from './bank.service';
 import { financeService } from './financeService';
@@ -30,7 +30,7 @@ export const cashService = {
       };
       
       await setDoc(cashRef, initialData);
-      return initialState;
+      return initialData;
     } catch (error) {
       console.error('Error getting cash balance:', error);
       return null;
@@ -78,6 +78,3 @@ export const cashService = {
     }
   }
 };
-
-// Add missing import
-import { setDoc } from 'firebase/firestore';

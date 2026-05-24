@@ -1,6 +1,6 @@
 // src/components/Loans/Application/LoanDetails/MudarabaForm.tsx
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { DollarSign, Calendar } from 'lucide-react';
 
 interface MudarabaFormProps {

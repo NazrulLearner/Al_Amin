@@ -1,7 +1,7 @@
 // src/pages/Loans/LoanList.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { loanService } from '../services/FinancingService';
 import { Link } from 'react-router-dom';
 import { Eye, Loader2, Search, CheckCircle, Clock, XCircle, DollarSign } from 'lucide-react';

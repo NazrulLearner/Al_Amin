@@ -1,56 +1,21 @@
-import { lazy } from "react";
-import ProtectedRoute from "../../app/routes/ProtectedRoute";
+import { lazy } from 'react';
+import type { RouteObject } from 'react-router-dom';
 
-const SettingsDashboard = lazy(() => import("./pages/index"));
-const AccountSettings = lazy(() => import("./pages/account"));
-const Notifications = lazy(() => import("./pages/notifications"));
-const Roles = lazy(() => import("./pages/roles"));
-const SystemSettings = lazy(() => import("./pages/system"));
+const SettingsPage = lazy(() => import('./pages/index'));
+const AccountSettings = lazy(() => import('./pages/account'));
+const NotificationSettings = lazy(() => import('./pages/notifications'));
+const RoleSettings = lazy(() => import('./pages/roles'));
+const SystemSettings = lazy(() => import('./pages/system'));
 
-export const settingsRoutes = [
+export const settingsRoutes: RouteObject[] = [
   {
-    path: "settings",
+    path: 'settings',
     children: [
-      {
-        index: true,
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <SettingsDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "account",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AccountSettings />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "roles",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <Roles />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "system",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <SystemSettings />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "notifications",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <Notifications />
-          </ProtectedRoute>
-        ),
-      },
+      { index: true, element: <SettingsPage /> },
+      { path: 'account', element: <AccountSettings /> },
+      { path: 'notifications', element: <NotificationSettings /> },
+      { path: 'roles', element: <RoleSettings /> },
+      { path: 'system', element: <SystemSettings /> },
     ],
   },
 ];

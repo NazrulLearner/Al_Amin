@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X, Loader2, Hash, FileText, UserCheck, Calendar } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { memberService } from '../../members/services/memberService';
 import { memberDueService } from '../services/memberDueService';
 import { feesService } from '../services/contributionService';

@@ -32,8 +32,8 @@ export { ADDRESS_INITIAL_STATE } from './address';
 // ============================================
 // MEMBER TYPES
 // ============================================
-export type { Member, SimpleMember } from './member';
-export { MEMBER_INITIAL_STATE } from './member';
+export type { Member, SimpleMember } from '../modules/members/types/member';
+export { MEMBER_INITIAL_STATE } from '../modules/members/types/member';
 
 // ============================================
 // FEE/CONTRIBUTION TYPES

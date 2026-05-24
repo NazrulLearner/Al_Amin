@@ -1,6 +1,6 @@
 // src/modules/financing/components/Application/FinancingTypeSelection.tsx
 import React from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { TrendingUp, Users, Sprout, Heart, Building2, DollarSign, Home, Shield } from 'lucide-react';
 
 interface LoanTypeSelectionProps {

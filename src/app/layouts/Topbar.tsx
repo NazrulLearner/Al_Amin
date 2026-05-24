@@ -121,7 +121,7 @@ const Topbar: React.FC = () => {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-lg"
+      className="bg-linear-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-lg"
     >
       <div className="flex items-center justify-between px-6 py-3">
         {/* Left side - Somity Info */}
@@ -301,7 +301,7 @@ const Topbar: React.FC = () => {
             >
               {/* User Avatar with Gradient */}
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg group-hover:shadow-xl transition-shadow">
+                <div className="w-10 h-10 bg-linear-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg group-hover:shadow-xl transition-shadow">
                   {user?.fullName?.charAt(0) || userData?.fullName?.charAt(0) || 'U'}
                 </div>
                 <motion.div 
@@ -368,14 +368,6 @@ const Topbar: React.FC = () => {
                         <Home className="w-4 h-4 mr-3 text-purple-600" />
                         <span>Super Admin Dashboard</span>
                       </motion.a>
-                      <motion.a 
-                        href="/super-admin/requests"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        whileHover={{ x: 5 }}
-                      >
-                        <Shield className="w-4 h-4 mr-3 text-purple-600" />
-                        <span>Somity Requests</span>
-                      </motion.a>
                     </>
                   ) : (
                     <>
@@ -427,7 +419,7 @@ const Topbar: React.FC = () => {
 
       {/* Decorative Bottom Line */}
       <motion.div 
-        className="h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+        className="h-1 bg-linear-to-r from-transparent via-white/50 to-transparent"
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ delay: 0.5, duration: 0.8 }}

@@ -1,7 +1,8 @@
 // src/types/member.ts
-import type { UserRole, MemberStatus, VerificationStatus, MembershipType } from './common';
+import type { UserRole, MemberStatus, VerificationStatus, MembershipType } from '../../../types/common';
 
 export interface Member {
+  personal: any;
   id: string;
   memberId: string;
   uid: string | null;

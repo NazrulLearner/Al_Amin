@@ -1,6 +1,7 @@
 // src/pages/settings/account.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { auth } from '../../../services/firebase/firebase';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { toast } from 'sonner';
 import { 
@@ -153,9 +154,15 @@ const AccountSettings: React.FC = () => {
     
     setLoading(true);
     try {
-      const credential = EmailAuthProvider.credential(user.email, passwordData.currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, passwordData.newPassword);
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser || !firebaseUser.email) {
+        toast.error('Unable to reauthenticate current user');
+        return;
+      }
+
+      const credential = EmailAuthProvider.credential(firebaseUser.email, passwordData.currentPassword);
+      await reauthenticateWithCredential(firebaseUser, credential);
+      await updatePassword(firebaseUser, passwordData.newPassword);
       
       setPasswordData({
         currentPassword: '',

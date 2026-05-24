@@ -1,6 +1,5 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
-import ProtectedRoute from "../../app/routes/ProtectedRoute";
 
 const TreasuryDashboard = lazy(() => import("./pages/index"));
 const BankAccounts = lazy(() => import("./pages/bankAccounts"));
@@ -11,56 +10,14 @@ const TransactionHistory = lazy(() => import("./pages/TransactionHistory"));
 
 export const treasuryRoutes: RouteObject[] = [
   {
-    path: "treasury",
+    path: "treasury",  // NO leading slash
     children: [
-      {
-        index: true,
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <TreasuryDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "accounts",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <BankAccounts />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "ledger",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <BankLedger />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "cash",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <CashManagement />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "transfer",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <FundTransfer />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "history",
-        element: (
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <TransactionHistory />
-          </ProtectedRoute>
-        ),
-      },
+      { index: true, element: <TreasuryDashboard /> },  // সবাই দেখতে পারে (যাদের permission)
+      { path: "bank-accounts", element: <BankAccounts /> },  // kebab-case
+      { path: "ledger", element: <BankLedger /> },
+      { path: "cash", element: <CashManagement /> },
+      { path: "fund-transfer", element: <FundTransfer /> },  // kebab-case
+      { path: "transactions", element: <TransactionHistory /> },
     ],
   },
 ];

@@ -1,48 +1,26 @@
-import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
-import ProtectedRoute from "../../app/routes/ProtectedRoute";
+// src/modules/members/routes.tsx
+import { lazy } from 'react'
+import type { RouteObject } from 'react-router-dom'
 
-const MembersList = lazy(() => import("./pages/MembersPage"));
-const AddMember = lazy(() => import("./pages/AddMember"));
-const MemberProfile = lazy(() => import("./pages/MemberProfilePage"));
-const MyProfile = lazy(() => import("./pages/my-profile"));
+// Lazy load components for better performance
+const MembersPage = lazy(() => import('./pages/MembersPage'))
+const AddMember = lazy(() => import('./pages/AddMember'))
+const MemberProfilePage = lazy(() => import('./pages/MemberProfilePage'))
+const MyProfile = lazy(() => import('./pages/my-profile'))
 
 export const membersRoutes: RouteObject[] = [
   {
-    path: "members",
+    path: 'members',
     children: [
-      {
-        index: true,
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member"]}>
-            <MembersList />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "add",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-            <AddMember />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ":id",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member"]}>
-            <MemberProfile />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "profile/my",
-        element: (
-          <ProtectedRoute allowedRoles={["admin", "cashier", "member"]}>
-            <MyProfile />
-          </ProtectedRoute>
-        ),
-      },
+      { index: true, element: <MembersPage /> },
+      { path: 'add', element: <AddMember /> },
+      { path: 'add-member', element: <AddMember /> }, // alias
+      { path: 'profile/:memberId', element: <MemberProfilePage /> },
+      { path: ':memberId', element: <MemberProfilePage /> },
     ],
   },
-];
+  {
+    path: 'my-profile',
+    element: <MyProfile />,
+  },
+]

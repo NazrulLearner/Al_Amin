@@ -1,7 +1,7 @@
 // src/pages/Loans/LoanReport.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { parseToDate, formatDate } from '../../../utils/formatters/dateFormatter';
 import { loanService } from '../services/FinancingService';
 import { 

@@ -6,7 +6,7 @@ import {
   Upload, FileText, Loader2, Badge, Shield
 } from 'lucide-react';
 import { useAuth } from '../../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { memberService } from '../../services/memberService';
 import type { Member, UserRole, MemberStatus } from '../../../../types';
 import { collections } from '../../../../services/firebase/firebaseCollections';

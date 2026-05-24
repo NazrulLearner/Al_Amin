@@ -1,7 +1,7 @@
 // src/modules/financing/components/CreateFinance/step2.tsx
 
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { Calendar, Clock, AlertCircle, FileText } from 'lucide-react';
 import LoanTypeSelection from '../Application/FinancingTypeSelection';
 import MurabahaForm from '../FinancingDetails/MurabahaForm';

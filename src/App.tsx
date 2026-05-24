@@ -1,18 +1,19 @@
 // src/App.tsx
-import { BrowserRouter } from "react-router-dom";
-import AppRoutes from "./app/routes/AppRoutes";
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './app/providers/AuthProvider'
+import { SomitySettingsProvider } from './app/context/SomitySettingsProvider'
+import AppRoutes from './app/routes/AppRoutes'
 
-import { AuthProvider } from "./app/providers/AuthProvider";
-
-import { Toaster } from "sonner";
-
-export default function App() {
+function App() {
   return (
-    <AuthProvider>
-        <BrowserRouter>
-          <Toaster position="top-right" richColors />
+    <BrowserRouter>
+      <AuthProvider>
+        <SomitySettingsProvider>
           <AppRoutes />
-        </BrowserRouter>
-    </AuthProvider>
-  );
+        </SomitySettingsProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  )
 }
+
+export default App

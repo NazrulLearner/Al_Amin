@@ -1,7 +1,7 @@
 // src/modules/financing/components/CreateFinance/step3.tsx
 
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { 
   CheckCircle, FileText, Upload, X, User, Users, TrendingUp, 
   Shield, Heart, Home, Building2, Package, Sprout, CreditCard,

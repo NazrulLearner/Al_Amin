@@ -1,4 +1,4 @@
-// src/pages/Users/CreateMemberAccount.tsx
+﻿// src/pages/Users/CreateMemberAccount.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
@@ -7,7 +7,6 @@ import { doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../../services/firebase/firebase';
 import { memberService } from '../../members/services/memberService';
 import { User, Mail, Lock, Key, AlertCircle, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
-import type { UserRole } from '../../../types';
 
 interface Member {
   id: string;
@@ -15,25 +14,14 @@ interface Member {
   fullName: string;
   phone: string;
   email?: string;
-  role?: UserRole;
   hasLogin?: boolean;
 }
-
-const assignableRoles: Array<{ value: UserRole; label: string }> = [
-  { value: 'member', label: 'Member' },
-  { value: 'collector', label: 'Collector' },
-  { value: 'cashier', label: 'Cashier' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'accountant', label: 'Accountant' },
-  { value: 'admin', label: 'Admin' },
-];
 
 const CreateMemberAccount = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('member');
   const [loginPassword, setLoginPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,14 +33,6 @@ const CreateMemberAccount = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const auth = getAuth();
-
-  const handleSelectMember = (member: Member) => {
-    setSelectedMember(member);
-    setLoginEmail(member.email || '');
-    setSelectedRole(member.role || 'member');
-    setError('');
-    setSuccess('');
-  };
 
   // Load members without login
   useEffect(() => {
@@ -70,8 +50,7 @@ const CreateMemberAccount = () => {
           memberId: m.memberId,
           fullName: m.fullName,
           phone: m.phone,
-          email: m.email,
-          role: m.membership?.role || 'member',
+          email: m.email
         }));
       
       setMembers(membersWithoutLogin);
@@ -83,7 +62,9 @@ const CreateMemberAccount = () => {
   const filteredMembers = members.filter(m => 
     m.memberId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.phone && m.phone.includes(searchTerm))
+
   );
 
   const validateForm = () => {
@@ -150,7 +131,7 @@ const CreateMemberAccount = () => {
         email: loginEmail,
         fullName: selectedMember!.fullName,
         phone: selectedMember!.phone || '',
-        role: selectedRole,
+        role: 'member',
         memberId: selectedMember!.memberId,
         status: 'active',
         createdAt: now,
@@ -161,11 +142,9 @@ const CreateMemberAccount = () => {
       // 3. Update member document with uid
       const memberRef = doc(db, 'members', selectedMember!.memberId);
       await updateDoc(memberRef, {
-        email: loginEmail,
         uid: newUser.uid,
         hasLoginAccount: true,
         loginEmail: loginEmail,
-        'membership.role': selectedRole,
         'metadata.updatedAt': now,
       });
       
@@ -176,13 +155,11 @@ const CreateMemberAccount = () => {
       
 Member ID: ${selectedMember!.memberId}
 Email: ${loginEmail}
-Role: ${selectedRole}
 Password: ${loginPassword}`);
       
       // Reset form
       setSelectedMember(null);
       setLoginEmail('');
-      setSelectedRole('member');
       setLoginPassword('');
       setConfirmPassword('');
       setAdminPassword('');
@@ -247,7 +224,7 @@ Password: ${loginPassword}`);
               filteredMembers.map(member => (
                 <div
                   key={member.id}
-                  onClick={() => handleSelectMember(member)}
+                  onClick={() => setSelectedMember(member)}
                   className={`p-3 border-b cursor-pointer hover:bg-green-50 transition-colors ${
                     selectedMember?.id === member.id ? 'bg-green-100 border-l-4 border-l-green-500' : ''
                   }`}
@@ -278,11 +255,6 @@ Password: ${loginPassword}`);
                 <div><span className="text-gray-600">Member ID:</span> <span className="font-medium">{selectedMember.memberId}</span></div>
                 <div><span className="text-gray-600">Name:</span> <span className="font-medium">{selectedMember.fullName}</span></div>
                 <div><span className="text-gray-600">Phone:</span> <span className="font-medium">{selectedMember.phone || 'N/A'}</span></div>
-                <div className="min-w-0">
-                  <span className="text-gray-600">Email:</span>{' '}
-                  <span className="font-medium break-all">{selectedMember.email || 'N/A'}</span>
-                </div>
-                <div><span className="text-gray-600">Current Role:</span> <span className="font-medium capitalize">{selectedMember.role || 'member'}</span></div>
               </div>
             </div>
           )}
@@ -317,22 +289,6 @@ Password: ${loginPassword}`);
                   disabled={!selectedMember || loading}
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                disabled={!selectedMember || loading}
-              >
-                {assignableRoles.map(role => (
-                  <option key={role.value} value={role.value}>{role.label}</option>
-                ))}
-              </select>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -432,3 +388,4 @@ Password: ${loginPassword}`);
 };
 
 export default CreateMemberAccount;
+

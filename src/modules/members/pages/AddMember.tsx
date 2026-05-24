@@ -7,7 +7,7 @@ import {
   Users, Home, FileText, Heart, Loader2
 } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { memberService } from '../services/memberService';
 import AddressSelect from '../components/addMember/AddressSelect';
 import type { UserRole } from '../../../types';
@@ -317,6 +317,13 @@ const AddMember = () => {
   };
 
   const getError = (field: string) => errors[field];
+  const inputClass = (field?: string) =>
+    `block w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 ${
+      field && getError(field) ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300'
+    }`;
+  const readOnlyClass = 'block min-h-[42px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600 shadow-sm';
+  const secondaryButtonClass = 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-gray-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+  const primaryButtonClass = 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 
   if (settingsLoading) {
     return (
@@ -328,11 +335,11 @@ const AddMember = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-cyan-50 py-6 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-full bg-gradient-to-br from-green-50 to-cyan-50 px-4 py-6 text-gray-900 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Add New Member</h1>
+        <div className="mb-6 text-center">
+          <h1 className="mb-2 text-2xl font-bold text-gray-800">Add New Member</h1>
           <p className="text-sm text-gray-600">Complete the member registration process</p>
           {somityInfo && (
             <p className="text-xs text-green-600 mt-1">Somity: {somityInfo.name}</p>
@@ -343,22 +350,22 @@ const AddMember = () => {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4 bg-white rounded-lg p-4 shadow-sm">
+        <div className="mb-6 flex justify-center overflow-x-auto pb-2">
+          <div className="inline-flex min-w-max items-center rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
             {steps.map((step, index) => {
               const StepIcon = step.icon;
               return (
                 <div key={step.number} className="flex items-center">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition ${
                     currentStep >= step.number ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 text-gray-400'
                   }`}>
                     {currentStep > step.number ? <CheckCircle2 size={16} /> : <StepIcon size={16} />}
                   </div>
-                  <span className={`ml-2 text-sm font-medium ${currentStep >= step.number ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`ml-2 whitespace-nowrap text-sm font-medium ${currentStep >= step.number ? 'text-green-600' : 'text-gray-400'}`}>
                     {step.title}
                   </span>
                   {index < steps.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-3 ${currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`mx-4 h-0.5 w-12 ${currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'}`} />
                   )}
                 </div>
               );
@@ -367,28 +374,28 @@ const AddMember = () => {
         </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-1 bg-gradient-to-r from-green-500 to-cyan-500"></div>
+        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
+          <div className="h-1 bg-gradient-to-r from-green-500 to-cyan-500"></div>
           
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
             <AnimatePresence mode="wait">
               {/* Step 1: Personal Information */}
               {currentStep === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }}>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                  <h2 className="mb-6 flex items-center text-xl font-semibold text-gray-800">
                     <User className="mr-3 text-green-500" size={24} /> Personal Information
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                     {/* Member ID */}
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Member ID <span className="text-red-500">*</span></label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <input type="text" value={formData.membership.memberId}
                           onChange={(e) => handleInputChange('membership.memberId', e.target.value.toUpperCase())}
-                          className={`flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 ${getError('membership.memberId') ? 'border-red-500' : 'border-gray-300'}`}
+                          className={inputClass('membership.memberId')}
                           placeholder={`e.g., ${memberIdPrefix}001`} />
                         {memberSettings?.autoGenerateMemberId && (
-                          <button type="button" onClick={regenerateMemberId} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">Generate</button>
+                          <button type="button" onClick={regenerateMemberId} className={`${secondaryButtonClass} sm:w-auto`}>Generate</button>
                         )}
                       </div>
                       {getError('membership.memberId') && <p className="text-xs text-red-500 mt-1">{getError('membership.memberId')}</p>}
@@ -398,14 +405,15 @@ const AddMember = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Join Date <span className="text-red-500">*</span></label>
                       <input type="date" value={formData.membership.dateOfJoin}
                         onChange={(e) => handleInputChange('membership.dateOfJoin', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                        className={inputClass()} />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
                       <input type="text" value={formData.personal.firstName}
                         onChange={(e) => handleInputChange('personal.firstName', e.target.value)}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('personal.firstName') ? 'border-red-500' : 'border-gray-300'}`} />
+                        className={inputClass('personal.firstName')}
+                        placeholder="Enter first name" />
                       {getError('personal.firstName') && <p className="text-xs text-red-500 mt-1">{getError('personal.firstName')}</p>}
                     </div>
 
@@ -413,27 +421,30 @@ const AddMember = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
                       <input type="text" value={formData.personal.middleName}
                         onChange={(e) => handleInputChange('personal.middleName', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                        className={inputClass()}
+                        placeholder="Enter middle name" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Last Name <span className="text-red-500">*</span></label>
                       <input type="text" value={formData.personal.lastName}
                         onChange={(e) => handleInputChange('personal.lastName', e.target.value)}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('personal.lastName') ? 'border-red-500' : 'border-gray-300'}`} />
+                        className={inputClass('personal.lastName')}
+                        placeholder="Enter last name" />
                       {getError('personal.lastName') && <p className="text-xs text-red-500 mt-1">{getError('personal.lastName')}</p>}
                     </div>
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Name (Auto-generated)</label>
-                      <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600">{formData.personal.fullName}</div>
+                      <div className={readOnlyClass}>{formData.personal.fullName || 'Full name will appear here'}</div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span className="text-red-500">*</span></label>
                       <input type="tel" value={formData.personal.phone}
                         onChange={(e) => handleInputChange('personal.phone', e.target.value)}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('personal.phone') ? 'border-red-500' : 'border-gray-300'}`} />
+                        className={inputClass('personal.phone')}
+                        placeholder="01XXXXXXXXX" />
                       {getError('personal.phone') && <p className="text-xs text-red-500 mt-1">{getError('personal.phone')}</p>}
                     </div>
 
@@ -441,45 +452,48 @@ const AddMember = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Alternate Phone</label>
                       <input type="tel" value={formData.personal.alternatePhone}
                         onChange={(e) => handleInputChange('personal.alternatePhone', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                        className={inputClass()}
+                        placeholder="Optional phone number" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                       <input type="email" value={formData.personal.email}
                         onChange={(e) => handleInputChange('personal.email', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                        className={inputClass()}
+                        placeholder="name@example.com" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">NID Number</label>
                       <input type="text" value={formData.personal.nidNumber}
                         onChange={(e) => handleInputChange('personal.nidNumber', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                        className={inputClass()}
+                        placeholder="Enter NID number" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth <span className="text-red-500">*</span></label>
                       <input type="date" value={formData.personal.dateOfBirth}
                         onChange={(e) => handleInputChange('personal.dateOfBirth', e.target.value)}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('personal.dateOfBirth') ? 'border-red-500' : 'border-gray-300'}`} />
+                        className={inputClass('personal.dateOfBirth')} />
                       {getError('personal.dateOfBirth') && <p className="text-xs text-red-500 mt-1">{getError('personal.dateOfBirth')}</p>}
                     </div>
 
                     {/* Profile Photo */}
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Profile Photo</label>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex flex-wrap items-center gap-4">
                         {photoPreview ? (
                           <div className="relative">
                             <img src={photoPreview} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-green-500" />
-                            <button type="button" onClick={removePhoto} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"><X size={12} /></button>
+                            <button type="button" onClick={removePhoto} className="absolute -right-1 -top-1 rounded-full bg-red-500 p-1 text-white shadow-sm transition hover:bg-red-600"><X size={12} /></button>
                           </div>
                         ) : (
                           <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center"><User size={20} className="text-gray-400" /></div>
                         )}
                         <div>
-                          <label className="cursor-pointer bg-green-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-green-600 inline-flex items-center">
+                          <label className="inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 active:scale-[0.98]">
                             <Upload size={14} className="mr-2" /> Upload Photo
                             <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                           </label>
@@ -498,45 +512,51 @@ const AddMember = () => {
                     <Users className="mr-3 text-blue-500" size={24} /> Family & Membership
                   </h2>
                   <div className="space-y-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                       <h3 className="text-lg font-medium text-gray-800 mb-4">Family Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name <span className="text-red-500">*</span></label>
                           <input type="text" value={formData.family.fatherName}
                             onChange={(e) => handleInputChange('family.fatherName', e.target.value)}
-                            className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('family.fatherName') ? 'border-red-500' : 'border-gray-300'}`} />
+                            className={inputClass('family.fatherName')}
+                            placeholder="Enter father's name" />
+                          {getError('family.fatherName') && <p className="mt-1 text-xs text-red-500">{getError('family.fatherName')}</p>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Name <span className="text-red-500">*</span></label>
                           <input type="text" value={formData.family.motherName}
                             onChange={(e) => handleInputChange('family.motherName', e.target.value)}
-                            className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('family.motherName') ? 'border-red-500' : 'border-gray-300'}`} />
+                            className={inputClass('family.motherName')}
+                            placeholder="Enter mother's name" />
+                          {getError('family.motherName') && <p className="mt-1 text-xs text-red-500">{getError('family.motherName')}</p>}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Name</label>
                           <input type="text" value={formData.family.spouseName}
                             onChange={(e) => handleInputChange('family.spouseName', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                            className={inputClass()}
+                            placeholder="Enter spouse name" />
                         </div>
                       </div>
                     </div>
 
                     {/* Nominee */}
-                    <div className="bg-gradient-to-r from-pink-50 to-red-50 p-4 rounded-lg border border-pink-200">
+                    <div className="rounded-xl border border-pink-200 bg-gradient-to-r from-pink-50 to-red-50 p-4">
                       <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center"><Heart className="mr-2 text-pink-500" size={20} /> Nominee</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
                           <input type="text" value={formData.family.nominee.name}
                             onChange={(e) => handleInputChange('family.nominee.name', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                            className={inputClass()}
+                            placeholder="Enter nominee name" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Relation</label>
                           <select value={formData.family.nominee.relation}
                             onChange={(e) => handleInputChange('family.nominee.relation', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                            className={inputClass()}>
                             <option value="">Select</option>
                             <option value="Son">Son</option><option value="Daughter">Daughter</option>
                             <option value="Wife">Wife</option><option value="Husband">Husband</option>
@@ -547,42 +567,43 @@ const AddMember = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Phone</label>
                           <input type="tel" value={formData.family.nominee.phone}
                             onChange={(e) => handleInputChange('family.nominee.phone', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                            className={inputClass()}
+                            placeholder="Enter nominee phone" />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Share (%)</label>
                           <input type="number" value={formData.family.nominee.share || ''}
                             onChange={(e) => handleInputChange('family.nominee.share', parseInt(e.target.value) || 0)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" min="0" max="100" />
+                            className={inputClass()} min="0" max="100" placeholder="0" />
                         </div>
                       </div>
                     </div>
 
                     {/* Membership */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                       <h3 className="text-lg font-medium text-gray-800 mb-4">Membership</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Share Count (Min: {minShare}, Max: {maxShare})</label>
                           <select value={formData.membership.shareCount}
                             onChange={(e) => handleInputChange('membership.shareCount', parseInt(e.target.value))}
-                            className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('membership.shareCount') ? 'border-red-500' : 'border-gray-300'}`}>
+                            className={inputClass('membership.shareCount')}>
                             {Array.from({ length: Math.min(maxShare, 20) }, (_, i) => i + minShare).map(n => <option key={n} value={n}>{n} Share{n > 1 ? 's' : ''}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Per Share Fee (৳)</label>
-                          <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600">৳{perShareValue}</div>
+                          <div className={readOnlyClass}>৳{perShareValue}</div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Fee (৳)</label>
-                          <div className="w-full px-3 py-2 text-sm border border-green-200 rounded-lg bg-green-50 text-green-700 font-medium">৳{formData.membership.monthlyFee}</div>
+                          <div className="block min-h-[42px] w-full rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm font-medium text-green-700 shadow-sm">৳{formData.membership.monthlyFee}</div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Member Role</label>
                           <select value={formData.membership.role}
                             onChange={(e) => handleInputChange('membership.role', e.target.value as UserRole)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                            className={inputClass()}>
                             <option value="member">Member</option><option value="cashier">Cashier</option><option value="admin">Admin</option>
                           </select>
                         </div>
@@ -590,7 +611,8 @@ const AddMember = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
                           <input type="text" value={formData.membership.position}
                             onChange={(e) => handleInputChange('membership.position', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                            className={inputClass()}
+                            placeholder="Enter position" />
                         </div>
                       </div>
                     </div>
@@ -603,7 +625,7 @@ const AddMember = () => {
                 <motion.div key="step3" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }}>
                   <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center"><Home className="mr-3 text-purple-500" size={24} /> Address & Documents</h2>
                   <div className="space-y-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                       <h3 className="text-lg font-medium text-gray-800 mb-4">Address</h3>
                       <AddressSelect value={{ division: formData.address.division, district: formData.address.district, upazila: formData.address.upazila, union: formData.address.union, village: formData.address.village }}
                         onChange={handleAddressChange} errors={{ division: errors['address.division'], district: errors['address.district'] }} />
@@ -611,11 +633,13 @@ const AddMember = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Present Address <span className="text-red-500">*</span></label>
                         <textarea value={formData.address.presentAddress}
                           onChange={(e) => handleInputChange('address.presentAddress', e.target.value)} rows={2}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg ${getError('address.presentAddress') ? 'border-red-500' : 'border-gray-300'}`} />
+                          className={inputClass('address.presentAddress')}
+                          placeholder="Enter present address" />
+                        {getError('address.presentAddress') && <p className="mt-1 text-xs text-red-500">{getError('address.presentAddress')}</p>}
                       </div>
-                      <div className="flex items-center space-x-2 mt-4">
+                      <div className="mt-4 flex items-center gap-2">
                         <input type="checkbox" id="sameAsPresent" checked={formData.address.sameAsPresent}
-                          onChange={(e) => handleInputChange('address.sameAsPresent', e.target.checked)} className="rounded" />
+                          onChange={(e) => handleInputChange('address.sameAsPresent', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
                         <label htmlFor="sameAsPresent" className="text-sm text-gray-600">Same as present address</label>
                       </div>
                       {!formData.address.sameAsPresent && (
@@ -623,7 +647,9 @@ const AddMember = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Permanent Address</label>
                           <textarea value={formData.address.permanentAddress}
                             onChange={(e) => handleInputChange('address.permanentAddress', e.target.value)} rows={2}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                            className={inputClass('address.permanentAddress')}
+                            placeholder="Enter permanent address" />
+                          {getError('address.permanentAddress') && <p className="mt-1 text-xs text-red-500">{getError('address.permanentAddress')}</p>}
                         </div>
                       )}
                     </div>
@@ -631,16 +657,16 @@ const AddMember = () => {
                     {/* Signature */}
                     <div className="border-t pt-6">
                       <h3 className="text-lg font-medium text-gray-800 mb-4">Signature</h3>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex flex-wrap items-center gap-4">
                         {signaturePreview ? (
                           <div className="relative">
                             <img src={signaturePreview} alt="Signature" className="w-24 h-16 border-2 border-purple-500 rounded-lg object-contain bg-white" />
-                            <button type="button" onClick={removeSignature} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"><X size={12} /></button>
+                            <button type="button" onClick={removeSignature} className="absolute -right-1 -top-1 rounded-full bg-red-500 p-1 text-white shadow-sm transition hover:bg-red-600"><X size={12} /></button>
                           </div>
                         ) : (
                           <div className="w-24 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"><FileText size={20} className="text-gray-400" /></div>
                         )}
-                        <label className="cursor-pointer bg-purple-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-purple-600 inline-flex items-center">
+                        <label className="inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700 active:scale-[0.98]">
                           <Upload size={14} className="mr-2" /> Upload Signature
                           <input type="file" accept="image/*" onChange={handleSignatureUpload} className="hidden" />
                         </label>
@@ -663,20 +689,20 @@ const AddMember = () => {
             </AnimatePresence>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center mt-8 pt-6 border-t">
+            <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
               <button type="button" onClick={prevStep} disabled={currentStep === 1}
-                className="flex items-center px-4 py-2 text-sm border rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                <ArrowLeft size={16} className="mr-2" /> Previous
+                className={secondaryButtonClass}>
+                <ArrowLeft size={16} /> Previous
               </button>
-              <div className="flex items-center space-x-3">
-                <button type="button" onClick={() => navigate('/members/index')} className="px-4 py-2 text-sm border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <button type="button" onClick={() => navigate('/members/index')} className={secondaryButtonClass}>Cancel</button>
                 {currentStep < steps.length ? (
-                  <button type="button" onClick={nextStep} className="flex items-center px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600">
-                    Next <ArrowRight size={16} className="ml-2" />
+                  <button type="button" onClick={nextStep} className={primaryButtonClass}>
+                    Next <ArrowRight size={16} />
                   </button>
                 ) : (
                   <button type="button" onClick={handleSubmit} disabled={loading}
-                    className="flex items-center px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50">
+                    className={primaryButtonClass}>
                     {loading ? <><Loader2 size={14} className="animate-spin mr-2" /> Saving...</> : <><Save size={16} className="mr-2" /> Complete Registration</>}
                   </button>
                 )}

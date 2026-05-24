@@ -1,6 +1,6 @@
 // src/components/Loans/Application/LoanDetails/MurabahaForm.tsx
 import React, { useState } from 'react';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { DollarSign, Calendar, TrendingUp, Package, Building2, MapPin, Truck } from 'lucide-react';
 
 interface MurabahaFormProps {

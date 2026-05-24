@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, User, Phone, MapPin, Briefcase, DollarSign, Users, Mail, Shield, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../../../app/providers/AuthProvider';
-import { useSomitySettings } from '../../../../app/providers/SomitySettingsProvider';
+import { useSomitySettings } from '../../../../app/context/SomitySettingsProvider';
 import { memberService } from '../../../members/services/memberService';
 import { toast } from 'sonner';
 
