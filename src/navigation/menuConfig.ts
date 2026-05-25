@@ -12,6 +12,7 @@ import { supportMenu } from "../modules/support/menu";
 import { settingsMenu } from "../modules/settings/menu";
 import { usersMenu } from "../modules/users/menu";
 import { superAdminMenu } from "../modules/super-admin/menu";
+import { assetsMenu } from "../modules/assets/menu";
 
 // Public এবং Auth এর menu নেই (কারণ তারা sidebar এ দেখাবে না)
 
@@ -23,6 +24,7 @@ export const menuConfig = [
   ...financingMenu,
   ...contributionsMenu,
   ...treasuryMenu,
+  ...assetsMenu,
   
   // Financial Modules
   ...businessMenu,

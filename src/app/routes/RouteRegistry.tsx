@@ -21,6 +21,7 @@ import { investmentRoutes } from "../../modules/Investments/routes";
 import { dashboardRoutes } from "../../modules/dashboards/routes";
 import { publicRoutes } from "../../modules/public/routes";
 import { authRoutes } from "../../modules/auth/routes";
+import { assetsRoutes } from "../../modules/assets/routes";
 
 export const RouteRegistry: RouteObject[] = [
   ...publicRoutes,
@@ -42,6 +43,7 @@ export const RouteRegistry: RouteObject[] = [
       ...membersRoutes,
       ...financingRoutes,
       ...treasuryRoutes,
+      ...assetsRoutes,
       ...reportsRoutes,
       ...settingsRoutes,
       ...usersRoutes,

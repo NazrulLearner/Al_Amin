@@ -1,8 +1,8 @@
-// src/App.tsx
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './app/providers/AuthProvider'
 import { SomitySettingsProvider } from './app/context/SomitySettingsProvider'
 import AppRoutes from './app/routes/AppRoutes'
+import './App.css'
 
 function App() {
   return (
