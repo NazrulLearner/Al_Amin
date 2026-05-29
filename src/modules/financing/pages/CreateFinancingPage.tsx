@@ -1,12 +1,13 @@
 // src/pages/Loans/AddLoan.tsx
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
-import Step1Applicant from '../components/CreateFinance/step1';
-import Step2LoanType from '../components/CreateFinance/step2';
-import Step3Finalization from '../components/CreateFinance/step3';
+// Lazy load all the large forms
+const Step1Applicant = lazy(() => import('../components/CreateFinance/step1'));
+const Step2LoanType = lazy(() => import('../components/CreateFinance/step2'));
+const Step3Finalization = lazy(() => import('../components/CreateFinance/step3'));
 import type { LoanApplicantFormData } from '../components/Application/ApplicantForm';
 import { loanService } from '../services/FinancingService';
 import { toast } from 'sonner';
@@ -279,38 +280,41 @@ const AddLoan: React.FC = () => {
           </div>
         )}
 
-        {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-md">
-          {currentStep === 1 && (
-            <Step1Applicant
-              onSubmit={handleStep1Complete}
-              initialData={{
-                applicant: formData.applicant,
-                grantor: formData.grantor,
-              }}
-            />
-          )}
+        {currentStep === 1 && (
+          <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+           <Step1Applicant
+             onSubmit={handleStep1Complete}
+             initialData={{
+              applicant: formData.applicant,
+              grantor: formData.grantor,
+           }}
+         />
+       </Suspense>
+    )}
 
-          {currentStep === 2 && (
-            <Step2LoanType
-              onSubmit={handleStep2Complete}
-              initialData={{
-                loanType: formData.loanType,
-                loanDetails: formData.loanDetails,
-              }}
-              onBack={handleBack}
-            />
-          )}
+       {currentStep === 2 && (
+        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+         <Step2LoanType
+           onSubmit={handleStep2Complete}
+           initialData={{
+            loanType: formData.loanType,
+            loanDetails: formData.loanDetails,
+          }}
+          onBack={handleBack}
+        />
+     </Suspense>
+   )}
 
-          {currentStep === 3 && (
-            <Step3Finalization
-              onSubmit={handleStep3Complete}
-              formData={formData as LoanFormData}
-              onBack={handleBack}
-              loading={loading}
-            />
-          )}
-        </div>
+    {currentStep === 3 && (
+      <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+       <Step3Finalization
+        onSubmit={handleStep3Complete}
+        formData={formData as LoanFormData}
+        onBack={handleBack}
+        loading={loading}
+      />
+    </Suspense>
+   )}
       </div>
     </div>
   );
