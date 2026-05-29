@@ -7,7 +7,7 @@ export const financingMenu = [
     children: [
       {
         key: "financing_dashboard",
-        label: "Dashboard",
+        label: "Overview",
         path: "/financing",
         icon: "layout-dashboard",
         roles: ["admin", "cashier", "member", "collector", "super_admin"],
@@ -29,7 +29,7 @@ export const financingMenu = [
       // বাকি গুলো collector দেখবে না
       {
         key: "all_financing",
-        label: "All Loans",
+        label: "Loans List",
         path: "/financing/list",
         icon: "list",
         roles: ["admin", "cashier", "super_admin"],
@@ -42,11 +42,25 @@ export const financingMenu = [
         roles: ["admin", "cashier", "super_admin"],
       },
       {
-        key: "receive_payment",
-        label: "Receive Payment",
-        path: "/financing/payments",
-        icon: "dollar-sign",
-        roles: ["admin", "cashier", "super_admin"],
+        key: "active_loans",
+        label: "Active Loans",
+        path: "/financing/active",
+        icon: "trending-up",
+        roles: ["admin", "cashier", "super_admin"], 
+      },
+      {
+        key: "completed_loans",
+        label: "Completed Loans",
+        path: "/financing/completed",
+        icon: "check-circle",
+        roles: ["admin", "cashier", "super_admin"], 
+      },
+      {
+        key: "loan_history",
+        label: "Loan History",
+        path: "/financing/history",
+        icon: "history",
+        roles: ["admin", "cashier", "super_admin"], 
       },
       {
         key: "financing_reports",

@@ -23,6 +23,8 @@ import {
   sortMonths,
   generateReceiptId,
 } from '../../../utils/calculations/contributionCalculator';
+import { bankTransactionService } from '../../bank-transactions';
+import type { CreateBankTransactionRequest } from '../../../types/bankTransactions';
 
 export { memberDueService } from './memberDueService';
 export { summaryService } from './summaryService';
@@ -49,7 +51,7 @@ export const feesService = {
       depositorId?: string;
       paymentDate?: string;
     }
-  ): Promise<{ receiptId: string; transactionId: string }> {
+  ): Promise<{ receiptId: string; transactionId: string; bankTransactionId?: string }> {
     try {
       const receiptPrefix = request.receiptPrefix || 'RCPT-';
       const finalReceiptId = request.receiptId || generateReceiptId(receiptPrefix);
@@ -60,7 +62,7 @@ export const feesService = {
 
       const sortedMonths = sortMonths(request.months) as typeof request.months;
 
-      // ✅ Duplicate check using memberId
+      // Duplicate check
       const transactionsRef = collections.contributions();
       const existingQuery = query(
         transactionsRef,
@@ -100,68 +102,38 @@ export const feesService = {
         : `${firstMonth.month} ${firstMonth.year} - ${lastMonth.month} ${lastMonth.year}`;
 
       // ============================================
-      // 📦 COMPLETE FLAT STRUCTURE - ROOT LEVEL FIELDS
+      // 📦 CONTRIBUTION TRANSACTION (Business Logic)
       // ============================================
-      
       const transactionData = {
-        // --- Basic Info ---
         amount: request.totalAmount,
         feeAmount: request.totalAmount,
         balanceDue: 0,
-        
-        // --- Status ---
         collectionStatus: request.collectionStatus || 'collected',
         status: 'paid',
         payType: request.paymentType,
         feeType: sortedMonths.length > 1 ? 'multiple' : 'monthly',
         isAdvancePayment: false,
         isPartialPayment: false,
-        
-        // --- Remarks ---
         remarks: request.remarks || null,
-        
-        // --- Dates ---
         createdAt,
         updatedAt: null,
         paymentDate,
         paymentPeriod,
-        
-        // --- Receipt ---
         receiptId: finalReceiptId,
         receiptFooter: request.receiptFooter || '',
         referenceNo: request.referenceNo || null,
         transferReference: null,
-        
-        // ============================================
-        // 👤 MEMBER INFO (Flat - Root Level)
-        // ============================================
         memberId: request.memberId,
         memberName: request.memberName,
         memberShare: request.memberShare || 0,
-        
-        // ============================================
-        // 👥 COLLECTOR INFO (Flat - Root Level)
-        // ============================================
         collectorId: request.collectorId || null,
         collectorMemberId: request.collectorMemberId || null,
         collectorName: request.collectorName || null,
-        
-        // ============================================
-        // ⌨️ ENTERED BY (Flat - Root Level)
-        // ============================================
         enteredById: request.enteredById || 'system',
         enteredByMemberId: request.enteredByMemberId || 'SYS',
         enteredByName: request.enteredByName || 'System',
-        
-        // ============================================
-        // 💳 PAYMENT METHOD (Flat - Root Level)
-        // ============================================
         paymentMethod: request.paymentType,
         paymentReferenceNo: request.referenceNo || null,
-        
-        // ============================================
-        // 🏦 DEPOSIT INFO (Flat - Root Level)
-        // ============================================
         depositBankName: request.bankName || null,
         depositBankAccountId: request.bankAccountId || null,
         depositBankAccountName: request.bankAccountName || null,
@@ -170,33 +142,96 @@ export const feesService = {
         depositorId: request.depositorId || null,
         depositReference: request.bankReference || null,
         depositStatus: request.collectionStatus === 'deposited' ? 'deposited' : 'pending',
-        
-        // ============================================
-        // 📅 MONTH RANGE (Flat - Root Level)
-        // ============================================
         feeMonthFrom: firstMonth.month,
         feeMonthTo: lastMonth.month,
         feeYearFrom: firstMonth.year,
         feeYearTo: lastMonth.year,
-        
-        // ============================================
-        // 📊 MONTH DETAILS (Flat - Root Level)
-        // ============================================
         month: `${firstMonth.month} ${firstMonth.year}`,
         monthsPaid: sortedMonths.length,
-        
-        // ============================================
-        // 📋 PAID MONTHS ARRAYS (Flat - Root Level)
-        // ============================================
         paidMonths: sortedMonths.map(m => m.month),
         paidYears: [...new Set(sortedMonths.map(m => m.year))],
         paidMonthsDetails: sortedMonths,
         advanceMonths: [],
+        linkedBankTransactionId: null,
       };
 
       await setDoc(transactionRef, transactionData);
 
-      // ✅ Update member financials
+      // ============================================
+      // 🏦 BANK TRANSACTION (Simplified with holdingType)
+      // ============================================
+      
+      let bankTransactionId: string | undefined;
+
+      // Determine holdingType based on where money is
+      // If deposited to somity bank directly → 'somity_bank'
+      // Otherwise (cash/mobile/collector bank) → 'collector'
+      const holdingType = (request.collectionStatus === 'deposited' && request.bankAccountId) 
+        ? 'somity_bank' 
+        : 'collector';
+      
+      // Determine destination type
+      let destinationType: 'somity_bank' | 'collector_cash' | 'collector_bank' | 'mobile_wallet' | 'member_account' | 'expense_payment' = 'collector_cash';
+      let handlerType: 'collector' | 'cashier' | 'member' | 'admin' = 'cashier';
+      let handlerId = request.enteredById || 'system';
+      let handlerName = request.enteredByName || 'System';
+      let destinationBankAccountId: string | undefined = undefined;
+
+      if (request.collectorId && request.collectorName) {
+        handlerType = 'collector';
+        handlerId = request.collectorId;
+        handlerName = request.collectorName;
+      }
+
+      if (request.collectionStatus === 'deposited' && request.bankAccountId) {
+        destinationType = 'somity_bank';
+        destinationBankAccountId = request.bankAccountId;
+      } else if (request.paymentType === 'cash') {
+        destinationType = 'collector_cash';
+      } else if (['bikash', 'nogod', 'rocket'].includes(request.paymentType)) {
+        destinationType = 'mobile_wallet';
+      } else if (request.paymentType === 'bank' && request.collectionStatus === 'collected') {
+        destinationType = 'collector_bank';
+        destinationBankAccountId = request.bankAccountId;
+      }
+
+      // Separate references
+      const paymentReference = request.referenceNo || undefined;
+      const depositReference = request.bankReference || (request.collectionStatus === 'deposited' ? request.referenceNo : undefined);
+
+      const createBankTxRequest: CreateBankTransactionRequest = {
+        transactionType: 'contribution',
+        direction: 'in',
+        sourceCollection: 'contributions',
+        sourceId: transactionRef.id,
+        sourceReceiptId: finalReceiptId,
+        amount: request.totalAmount,
+        paymentMethod: request.paymentType as any,
+        paymentReference: paymentReference,
+        depositReference: depositReference,
+        paymentDate: paymentDate,
+        handlerId: handlerId,
+        handlerName: handlerName,
+        handlerType: handlerType,
+        holdingType: holdingType,                    // ✅ KEY FIELD
+        destinationType: destinationType,
+        memberId: request.memberId,
+        memberName: request.memberName,
+        remarks: request.remarks,
+      };
+
+      if (destinationBankAccountId) {
+        createBankTxRequest.destinationBankAccountId = destinationBankAccountId;
+      }
+
+      bankTransactionId = await bankTransactionService.createBankTransaction(createBankTxRequest);
+      
+      // Link bank transaction to contribution
+      await updateDoc(transactionRef, {
+        linkedBankTransactionId: bankTransactionId
+      });
+
+      // Update member financials
       const memberRef = collections.member(request.memberId);
       await updateDoc(memberRef, {
         'financials.totalFeesPaid': increment(request.totalAmount),
@@ -207,7 +242,13 @@ export const feesService = {
       });
 
       console.log(`✅ Fee payment recorded: ${finalReceiptId} for ${request.memberName}`);
-      return { receiptId: finalReceiptId, transactionId: transactionRef.id };
+      console.log(`✅ Bank transaction recorded: ${bankTransactionId} (holdingType: ${holdingType})`);
+      
+      return { 
+        receiptId: finalReceiptId, 
+        transactionId: transactionRef.id,
+        bankTransactionId 
+      };
     } catch (error) {
       console.error('Error adding fee payment:', error);
       throw error;
@@ -245,10 +286,48 @@ export const feesService = {
     }
   },
 
+  async getTransactionByReceiptId(receiptId: string): Promise<FeeTransaction | null> {
+    try {
+      const transactionsRef = collections.contributions();
+      const q = query(transactionsRef, where('receiptId', '==', receiptId), limit(1));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        return null;
+      }
+      
+      const doc = snapshot.docs[0];
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || data.createdAt,
+        paymentDate: data.paymentDate?.toDate?.() || data.paymentDate,
+        updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+        depositDate: data.depositDate?.toDate?.() || data.depositDate,
+      } as FeeTransaction;
+    } catch (error) {
+      console.error('Error getting transaction by receipt ID:', error);
+      return null;
+    }
+  },
+
   async deleteTransaction(transactionId: string, memberId: string, amount: number): Promise<void> {
     try {
       const batch = writeBatch(db);
       const transactionRef = collections.contribution(transactionId);
+      
+      // Get linked bank transaction
+      const transactionSnap = await getDocs(query(collections.contributions(), where('id', '==', transactionId)));
+      let linkedBankTxId: string | undefined;
+      transactionSnap.forEach(doc => {
+        linkedBankTxId = doc.data().linkedBankTransactionId;
+      });
+      
+      if (linkedBankTxId) {
+        await bankTransactionService.reverseBankTransaction(linkedBankTxId, 'system', 'Contribution deleted');
+      }
+      
       batch.delete(transactionRef);
 
       const memberRef = collections.member(memberId);
@@ -292,6 +371,7 @@ export const feesService = {
 
 export const feeTransactionService = {
   getAllTransactions: feesService.getAllTransactions,
+  getTransactionByReceiptId: feesService.getTransactionByReceiptId,
   addTransaction: feesService.addFeePayment,
 };
 

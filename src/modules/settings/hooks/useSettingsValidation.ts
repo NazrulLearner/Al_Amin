@@ -1,11 +1,14 @@
-// src/hooks/useSettingsValidation.ts
+// src/modules/settings/hooks/useSettingsValidation.ts
+
 import { useState } from 'react';
-import { memberService } from '../../members/services/memberService';
-import { feesService } from '../../contributions/services/contributionService';
-import { loanService } from '../../financing/services/FinancingService';
+import { memberService } from '../../../modules/members/services/memberService';
+import { feesService } from '../../../modules/contributions/services/contributionService';
+import { loanService } from '../../../modules/financing/services/FinancingService';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../../services/firebase/firebase';
 
 export interface ValidationWarning {
-  type: 'fee' | 'loan' | 'share' | 'member' | 'financial';
+  type: 'fee' | 'loan' | 'share' | 'member' | 'financial' | 'bank' | 'collector';
   message: string;
   impact: string;
   suggestion: string;
@@ -16,9 +19,29 @@ export const useSettingsValidation = () => {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<any>(null);
 
+  // Check if there are any bank accounts
+  const checkHasBankAccounts = async (): Promise<boolean> => {
+    try {
+      const snapshot = await getDocs(collection(db, 'bank_accounts'));
+      return snapshot.size > 0;
+    } catch {
+      return false;
+    }
+  };
+
+  // Check if there are any fund transactions
+  const checkHasFundTransactions = async (): Promise<boolean> => {
+    try {
+      const snapshot = await getDocs(collection(db, 'fund_transactions'));
+      return snapshot.size > 0;
+    } catch {
+      return false;
+    }
+  };
+
   const checkHasFeeTransactions = async (): Promise<boolean> => {
     try {
-      const transactions = await feesService.getAllTransactions(1); // Just check 1
+      const transactions = await feesService.getAllTransactions(1);
       return transactions.length > 0;
     } catch {
       return false;
@@ -61,9 +84,9 @@ export const useSettingsValidation = () => {
       if (hasTransactions) {
         warningsList.push({
           type: 'fee',
-          message: '⚠️ Fee amount has been changed!',
-          impact: 'This will affect all future fee calculations. Existing fee records will NOT be updated.',
-          suggestion: 'Consider creating a new fee cycle starting from next month.'
+          message: '⚠️ ফি এর পরিমাণ পরিবর্তন করা হয়েছে!',
+          impact: 'এটি ভবিষ্যতের সকল ফি ক্যালকুলেশনকে প্রভাবিত করবে। বিদ্যমান ফি রেকর্ড আপডেট হবে না।',
+          suggestion: 'পরবর্তী মাস থেকে নতুন ফি সাইকেল শুরু করার কথা বিবেচনা করুন।'
         });
       }
     }
@@ -74,9 +97,9 @@ export const useSettingsValidation = () => {
       if (hasMembers) {
         warningsList.push({
           type: 'share',
-          message: '⚠️ Share value has been changed!',
-          impact: `Current members' share values will remain unchanged. New members will get the new value.`,
-          suggestion: 'You can manually update existing members or keep the old value for existing members.'
+          message: '⚠️ শেয়ারের মান পরিবর্তন করা হয়েছে!',
+          impact: 'বর্তমান সদস্যদের শেয়ারের মান অপরিবর্তিত থাকবে। নতুন সদস্যরা নতুন মান পাবে।',
+          suggestion: 'আপনি ম্যানুয়ালি বিদ্যমান সদস্যদের আপডেট করতে পারেন অথবা পুরনো মান রেখে দিতে পারেন।'
         });
       }
     }
@@ -87,9 +110,9 @@ export const useSettingsValidation = () => {
       if (hasActiveLoans) {
         warningsList.push({
           type: 'loan',
-          message: '⚠️ Loan interest rate has been changed!',
-          impact: `Active loans will continue with their existing interest rates. New loans will use the new rate.`,
-          suggestion: 'Consider applying new rate only to future loan applications.'
+          message: '⚠️ লোনের সুদের হার পরিবর্তন করা হয়েছে!',
+          impact: 'সক্রিয় লোনগুলো তাদের বিদ্যমান সুদের হারে চলতে থাকবে। নতুন লোন নতুন হার ব্যবহার করবে।',
+          suggestion: 'শুধুমাত্র ভবিষ্যতের লোন আবেদনের জন্য নতুন হার প্রয়োগ করার কথা বিবেচনা করুন।'
         });
       }
     }
@@ -100,9 +123,9 @@ export const useSettingsValidation = () => {
       if (hasExistingMembers) {
         warningsList.push({
           type: 'member',
-          message: '⚠️ Member ID format has been changed!',
-          impact: `Existing member IDs will NOT be updated. New members will get the new format.`,
-          suggestion: 'It is recommended to keep consistent ID format for better tracking.'
+          message: '⚠️ সদস্য আইডির ফরম্যাট পরিবর্তন করা হয়েছে!',
+          impact: 'বিদ্যমান সদস্যদের আইডি আপডেট হবে না। নতুন সদস্যরা নতুন ফরম্যাট পাবে।',
+          suggestion: 'ভালো ট্র্যাকিংয়ের জন্য সামঞ্জস্যপূর্ণ আইডি ফরম্যাট রাখার পরামর্শ দেওয়া হয়।'
         });
       }
     }
@@ -113,12 +136,15 @@ export const useSettingsValidation = () => {
       if (hasTransactions) {
         warningsList.push({
           type: 'financial',
-          message: '⚠️ Fiscal year start date has been changed!',
-          impact: `This will affect all future financial reports. Historical data will remain unchanged.`,
-          suggestion: 'Fiscal year should only be changed at the beginning of a new fiscal year.'
+          message: '⚠️ অর্থবছরের শুরুর তারিখ পরিবর্তন করা হয়েছে!',
+          impact: 'এটি ভবিষ্যতের সকল আর্থিক প্রতিবেদনকে প্রভাবিত করবে। ঐতিহাসিক ডাটা অপরিবর্তিত থাকবে।',
+          suggestion: 'অর্থবছর শুধুমাত্র নতুন অর্থবছরের শুরুতে পরিবর্তন করা উচিত।'
         });
       }
     }
+
+    // 6. Bank Account Delete Warning (if trying to delete active account)
+    // This will be handled in the bank component separately
 
     setWarnings(warningsList);
     return warningsList;

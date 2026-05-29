@@ -1,6 +1,6 @@
 // src/types/contributions.ts
 
-import type { PaymentType, FeeType, PaymentStatus, CollectionStatus } from './common';
+import type { PaymentType, FeeType, PaymentStatus, CollectionStatus } from '../../../types/common';
 
 // ============================================
 // 📄 FEE TRANSACTION - FLAT STRUCTURE

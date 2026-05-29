@@ -216,7 +216,7 @@ const LoanHistory: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => navigate(`/loans/details/${loan.id}`)}
+                          onClick={() => navigate(`/financing/details/${loan.loanId}`)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="View Details"
                         >

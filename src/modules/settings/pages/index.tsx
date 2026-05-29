@@ -1,4 +1,4 @@
-// src/pages/settings/index.tsx
+// src/modules/settings/pages/index.tsx
 
 import React, { useState, useEffect } from 'react';
 import { getDoc, setDoc } from 'firebase/firestore';
@@ -6,15 +6,14 @@ import { collections } from '../../../services/firebase/firebaseCollections';
 import type { SomitySettings } from '../../../types/settings';
 import { DEFAULT_SOMITY_SETTINGS } from '../../../types/settings';
 import { toast } from 'sonner';
-import { Loader2, Save, AlertTriangle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Save, AlertTriangle, X, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 import { useSettingsValidation } from '../hooks/useSettingsValidation';
 
-// Your components
+// Settings Components
 import GeneralSettings from '../components/GeneralSettings';
 import ShareSettings from '../components/ShareSettings';
 import FeeSettings from '../components/FeeSettings';
 import MemberSettings from '../components/MemberSettings';
-import BankSettings from '../components/BankSettings';
 import IslamicLoanSettings from '../components/IslamicFinanceSettings';
 import InvestmentSettings from '../components/InvestmentSettings';
 import CollectionSettings from '../components/CollectionSettings';
@@ -23,6 +22,17 @@ import FinancialSettings from '../components/FinancialSettings';
 import ReportSettings from '../components/ReportSettings';
 import SecuritySettings from '../components/SecuritySettings';
 
+// Bank Components (New)
+import SomityBankSettings from '../components/bank/SomityBankSettings';
+import CollectorBankSettings from '../components/bank/CollectorBankSettings';
+
+interface SimpleCollector {
+  id: string;
+  memberId: string;
+  name: string;
+  phone: string;
+}
+
 const SomitySettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<SomitySettings>(DEFAULT_SOMITY_SETTINGS);
   const [originalSettings, setOriginalSettings] = useState<SomitySettings>(DEFAULT_SOMITY_SETTINGS);
@@ -30,6 +40,7 @@ const SomitySettingsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [showScrollButtons, setShowScrollButtons] = useState(false);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const tabsContainerRef = React.useRef<HTMLDivElement>(null);
   
   const { 
@@ -41,32 +52,17 @@ const SomitySettingsPage: React.FC = () => {
     setPendingChanges 
   } = useSettingsValidation();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  // Check if tabs need scroll buttons
-  useEffect(() => {
-    const checkScroll = () => {
-      const container = tabsContainerRef.current;
-      if (container) {
-        setShowScrollButtons(container.scrollWidth > container.clientWidth);
-      }
-    };
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, []);
-
-  const scrollTabs = (direction: 'left' | 'right') => {
-    const container = tabsContainerRef.current;
-    if (container) {
-      const scrollAmount = 200;
-      container.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
+  // Helper: Get collectors list from settings
+  const getCollectorsList = (): SimpleCollector[] => {
+    const collectors = settings.collection?.collectorSettings?.collectors || [];
+    return collectors
+      .filter((c: any) => c.isActive)
+      .map((c: any) => ({
+        id: c.memberId,
+        memberId: c.memberId,
+        name: c.memberName,
+        phone: c.phone || ''
+      }));
   };
 
   const fetchSettings = async () => {
@@ -91,9 +87,43 @@ const SomitySettingsPage: React.FC = () => {
       setOriginalSettings(loadedSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
-      toast.error('Failed to load settings');
+      toast.error('সেটিংস লোড করতে ব্যর্থ হয়েছে');
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  useEffect(() => {
+    const checkScroll = () => {
+      const container = tabsContainerRef.current;
+      if (container) {
+        setShowScrollButtons(container.scrollWidth > container.clientWidth);
+      }
+    };
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
+
+  useEffect(() => {
+    if (showSaveSuccess) {
+      const timer = setTimeout(() => setShowSaveSuccess(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSaveSuccess]);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    const container = tabsContainerRef.current;
+    if (container) {
+      const scrollAmount = 200;
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -109,10 +139,11 @@ const SomitySettingsPage: React.FC = () => {
         updatedAt: new Date()
       }, { merge: true });
       setOriginalSettings(settingsToSave);
-      toast.success('✅ Settings saved successfully!');
+      setShowSaveSuccess(true);
+      toast.success('✅ সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে!');
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast.error(error.message || '❌ Failed to save settings');
+      toast.error(error.message || '❌ সেটিংস সংরক্ষণ করতে ব্যর্থ হয়েছে');
     } finally {
       setSaving(false);
     }
@@ -120,8 +151,9 @@ const SomitySettingsPage: React.FC = () => {
 
   const handleSave = async () => {
     const hasChanges = JSON.stringify(settings) !== JSON.stringify(originalSettings);
+    
     if (!hasChanges) {
-      toast.info('ℹ️ No changes to save. Please modify something first.');
+      toast.info('ℹ️ কোনো পরিবর্তন করা হয়নি। দয়া করে প্রথমে কিছু পরিবর্তন করুন।');
       return;
     }
     
@@ -154,7 +186,7 @@ const SomitySettingsPage: React.FC = () => {
     { id: 'investment', label: 'Investment', icon: '📈', shortLabel: 'Inv' },
     { id: 'collection', label: 'Collection', icon: '💳', shortLabel: 'Coll' },
     { id: 'collector', label: 'Collectors', icon: '👥', shortLabel: 'Collr' },
-    { id: 'financial', label: 'Financial', icon: '📊', shortLabel: 'Fin' },
+    { id: 'financial', label: 'Financial', icon: '💰', shortLabel: 'Fin' },
     { id: 'report', label: 'Reports', icon: '📋', shortLabel: 'Rep' },
     { id: 'security', label: 'Security', icon: '🔒', shortLabel: 'Sec' }
   ];
@@ -169,70 +201,73 @@ const SomitySettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - NOT sticky, normal flow */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center flex-wrap gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Somity Settings</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Configure your Somity settings and preferences
-              </p>
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-blue-600" />
+              <h1 className="text-lg font-bold text-gray-900">Somity Settings</h1>
             </div>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
             >
               {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-3.5 w-3.5" />
               )}
-              Save Changes
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Tabs Navigation - Sticky but NOT fixed, scrolls with page */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+      {/* Save Success Banner */}
+      {showSaveSuccess && (
+        <div className="fixed top-16 right-4 z-50 bg-green-50 border border-green-200 rounded-lg shadow-lg p-3 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <p className="text-sm text-green-700">সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs Navigation */}
+      <div className="sticky top-[49px] z-10 bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Tabs with horizontal scroll */}
           <div className="relative">
-            {/* Left scroll button */}
             {showScrollButtons && (
               <button
                 onClick={() => scrollTabs('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-md p-1.5 border border-gray-200 hover:bg-gray-50 transition-all"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-md p-1 border border-gray-200 hover:bg-gray-50"
               >
-                <ChevronLeft className="h-4 w-4 text-gray-600" />
+                <ChevronLeft className="h-3.5 w-3.5 text-gray-600" />
               </button>
             )}
             
-            {/* Tabs Container - horizontal scroll */}
             <div
               ref={tabsContainerRef}
-              className="overflow-x-auto scrollbar-hide"
+              className="overflow-x-auto scrollbar-hide py-2"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              <nav className="flex gap-1 min-w-max px-1 py-3">
+              <nav className="flex gap-0.5 min-w-max">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium 
-                      rounded-lg transition-all whitespace-nowrap
+                      inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium 
+                      rounded-md transition-all whitespace-nowrap
                       ${activeTab === tab.id
                         ? 'bg-blue-50 text-blue-700 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }
                     `}
                   >
-                    <span className="text-base">{tab.icon}</span>
-                    {/* Hide label on very small screens */}
+                    <span className="text-sm">{tab.icon}</span>
                     <span className="hidden sm:inline">{tab.label}</span>
                     <span className="sm:hidden text-xs">{tab.shortLabel}</span>
                   </button>
@@ -240,117 +275,79 @@ const SomitySettingsPage: React.FC = () => {
               </nav>
             </div>
             
-            {/* Right scroll button */}
             {showScrollButtons && (
               <button
                 onClick={() => scrollTabs('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-md p-1.5 border border-gray-200 hover:bg-gray-50 transition-all"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-md p-1 border border-gray-200 hover:bg-gray-50"
               >
-                <ChevronRight className="h-4 w-4 text-gray-600" />
+                <ChevronRight className="h-3.5 w-3.5 text-gray-600" />
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Tab Content - Normal flow */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Tab Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
         {activeTab === 'general' && (
           <GeneralSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'share' && (
           <ShareSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'fee' && (
           <FeeSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'member' && (
           <MemberSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
+        {/* ✅ Bank Tab - Using New Components */}
         {activeTab === 'bank' && (
           <div className="space-y-6">
-            <BankSettings
-              bankAccounts={settings.bankAccounts || []}
-              onUpdate={(bankAccounts) => updateSettings({ bankAccounts })}
-              title="Somity Bank Accounts"
-              description="Add and manage the official bank accounts for this somity."
-              addLabel="Add Somity Account"
+            <SomityBankSettings />
+            <CollectorBankSettings 
+              collectors={getCollectorsList()}
+              isEnabled={settings.collection?.allowCollectorPersonalAccount || false}
+              onToggle={() => {
+                updateSettings({
+                  collection: {
+                    ...settings.collection,
+                    allowCollectorPersonalAccount: !(settings.collection?.allowCollectorPersonalAccount || false)
+                  }
+                });
+              }}
             />
-
-            <section className="space-y-4">
-              <div className="px-1 py-2 flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Collector Bank Accounts</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Allow collectors to use their own bank accounts for collection deposits.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => updateSettings({
-                    collectorBanking: {
-                      useCollectorBankAccounts: !(settings.collectorBanking?.useCollectorBankAccounts ?? false),
-                      collectorBankAccounts: settings.collectorBanking?.collectorBankAccounts || [],
-                    },
-                  })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.collectorBanking?.useCollectorBankAccounts ? 'bg-emerald-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.collectorBanking?.useCollectorBankAccounts ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-              {settings.collectorBanking?.useCollectorBankAccounts ? (
-                <BankSettings
-                  bankAccounts={settings.collectorBanking?.collectorBankAccounts || []}
-                  onUpdate={(collectorBankAccounts) => updateSettings({
-                    collectorBanking: {
-                      useCollectorBankAccounts: true,
-                      collectorBankAccounts,
-                    },
-                  })}
-                    title="Collector Bank Accounts"
-                    description="Add bank accounts collectors can use when collector banking is enabled."
-                    addLabel="Add Collector Account"
-                    collectorOptions={(settings.collection?.collectorSettings?.collectors || [])
-                      .filter((collector: any) => collector.isActive)
-                      .map((collector: any) => ({
-                        id: collector.id,
-                        memberId: collector.memberId,
-                        memberName: collector.memberName,
-                      }))}
-                    requireCollector
-                  />
-              ) : (
-                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
-                  Collector bank account use is off. Turn it on to add collector bank accounts.
-                </div>
-              )}
-            </section>
           </div>
         )}
+        
         {activeTab === 'islamic' && (
           <IslamicLoanSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'investment' && (
           <InvestmentSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'collection' && (
           <CollectionSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'collector' && (
           <CollectorSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'financial' && (
           <FinancialSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'report' && (
           <ReportSettings settings={settings} updateSettings={updateSettings} />
         )}
+        
         {activeTab === 'security' && (
           <SecuritySettings settings={settings} updateSettings={updateSettings} />
         )}
@@ -358,63 +355,45 @@ const SomitySettingsPage: React.FC = () => {
       
       {/* Warning Modal */}
       {showWarningModal && warnings.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="bg-yellow-100 p-2 rounded-full">
-                    <AlertTriangle className="h-6 w-6 text-yellow-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-900">⚠️ Important Warning</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-yellow-100 p-2 rounded-full">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
                 </div>
-                <button
-                  onClick={() => {
-                    setShowWarningModal(false);
-                    setPendingChanges(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <h2 className="text-base font-semibold text-gray-900">গুরুত্বপূর্ণ সতর্কতা!</h2>
               </div>
               
-              <p className="text-gray-600 mb-4">
-                Your changes may affect existing data. Please review the following:
+              <p className="text-sm text-gray-600 mb-3">
+                আপনার পরিবর্তনগুলি বিদ্যমান ডাটাকে প্রভাবিত করতে পারে:
               </p>
               
-              <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
                 {warnings.map((warning, index) => (
-                  <div key={index} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <p className="font-medium text-yellow-800">{warning.message}</p>
-                    <p className="text-sm text-yellow-700 mt-1">{warning.impact}</p>
-                    <p className="text-sm text-yellow-600 mt-1 font-medium">💡 {warning.suggestion}</p>
+                  <div key={index} className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
+                    <p className="text-xs font-medium text-yellow-800">{warning.message}</p>
+                    <p className="text-xs text-yellow-700 mt-0.5">{warning.impact}</p>
+                    <p className="text-xs text-yellow-600 mt-0.5">💡 {warning.suggestion}</p>
                   </div>
                 ))}
               </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-                <p className="text-sm text-blue-800">
-                  <strong>⚠️ Note:</strong> These changes cannot be automatically reverted. 
-                  Make sure you understand the impact before proceeding.
-                </p>
-              </div>
-              
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={handleConfirmSave}
-                  className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+                  className="flex-1 bg-yellow-600 text-white py-1.5 text-sm rounded-lg hover:bg-yellow-700"
                 >
-                  I Understand, Save Anyway
+                  তবু সংরক্ষণ করব
                 </button>
                 <button
                   onClick={() => {
                     setShowWarningModal(false);
                     setPendingChanges(null);
                   }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-300 text-gray-700 py-1.5 text-sm rounded-lg hover:bg-gray-50"
                 >
-                  Cancel
+                  বাতিল
                 </button>
               </div>
             </div>

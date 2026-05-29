@@ -159,7 +159,7 @@ const ActiveLoan: React.FC = () => {
           </div>
         </div>
 
-        {/* Loans Table */}
+        {/* financing Table */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -230,7 +230,7 @@ const ActiveLoan: React.FC = () => {
                           
                           {/* View Details Button */}
                           <button
-                            onClick={() => navigate(`/loans/details/${loan.id}`)}
+                            onClick={() => navigate(`/financing/details/${loan.id}`)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
@@ -253,7 +253,7 @@ const ActiveLoan: React.FC = () => {
               <p className="text-lg font-medium text-gray-900">No active loans</p>
               <p className="text-sm text-gray-500 mt-1">All loans have been completed</p>
               <button
-                onClick={() => navigate('/loans/add')}
+                onClick={() => navigate('/financing/create')}
                 className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 + Create New Loan

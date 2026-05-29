@@ -6,3 +6,4 @@ export { default as ContributionSummary } from './ContributionSummary';
 export { default as MemberSearchCard } from './MemberSearchCard';
 export { default as MonthSelector } from './MonthSelector';
 export { default as PaymentMethodSelector } from './PaymentMethodSelector';
+export { default as BankAccountSelector } from './BankAccountSelector'; // New component for bank account selection

@@ -46,8 +46,8 @@ export type {
   FeeSummary,
   FeeEntryFormData,
   ReceiptData
-} from './contributions';
-export { FEE_TRANSACTION_INITIAL_STATE } from './contributions';
+} from '../modules/contributions/types/contributions';
+export { FEE_TRANSACTION_INITIAL_STATE } from '../modules/contributions/types/contributions';
 
 // ============================================
 // LOAN/FINANCING TYPES

@@ -1,6 +1,7 @@
 // src/types/settings.ts
 
 import type { CollectorConfig } from './collector';
+
 export interface GeneralSettings {
   somityName: string;
   somityEmail: string;
@@ -13,33 +14,17 @@ export interface GeneralSettings {
   establishedYear?: number;
   registrationNumber?: string;
   taxId?: string;
-  alternativePhone?: string;  // 👈 যোগ করুন
-  fax?: string;               // 👈 যোগ করুন
-  // ওয়াটারমার্ক ফিল্ড যোগ করুন
+  alternativePhone?: string;
+  fax?: string;
   watermarkText?: string;
   watermarkOpacity?: number;
   watermarkEnabled?: boolean;
-  watermarkRotation?: number;  // 👈 নতুন: ওয়াটারমার্কের ঘূর্ণন কোণ (ডিগ্রীতে)
+  watermarkRotation?: number;
 }
 
-// Bank Account Interface
-export interface BankAccount {
-  id: string;
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-  collectorId?: string;
-  collectorMemberId?: string;
-  collectorName?: string;
-  branchName?: string;
-  routingNumber?: string;
-  swiftCode?: string;
-  accountType: 'savings' | 'current' | 'fixed';
-  isActive: boolean;
-  balance: number;
-  lastUpdated: Date;
-  notes?: string;
-}
+// ✅ BankAccount এখন শুধু এখানে ডিফাইন থাকবে (Settings এ না)
+// কিন্তু settings.ts থেকে আমরা এই ইন্টারফেস সরিয়ে দেবো না
+// কারণ অন্য জায়গায় ব্যবহার হতে পারে
 
 // Collector Interface
 export interface Collector {
@@ -56,25 +41,20 @@ export interface Collector {
   joinedAt: Date;
 }
 
-// Personal Account Interface (Collector's own)
 export interface PersonalAccount {
   id: string;
   type: 'bank' | 'bikash' | 'nogod' | 'rocket';
   accountName: string;
   accountNumber: string;
-  bankName?: string;  // Only for bank type
+  bankName?: string;
   isActive: boolean;
   isVerified: boolean;
 }
 
-
 export interface SomitySettings {
   general: GeneralSettings;
-  bankAccounts?: BankAccount[];
-  collectorBanking?: {
-    useCollectorBankAccounts: boolean;
-    collectorBankAccounts: BankAccount[];
-  };
+  // ❌ bankAccounts?: BankAccount[];  // এই লাইনটি DELETE করুন
+  // ❌ collectorBanking?: {...}  // এই লাইনটি DELETE করুন (যদি থাকে)
   share: {
     perShareValue: number;
     minShare: number;
@@ -126,63 +106,15 @@ export interface SomitySettings {
     autoDisburseAfterApproval?: boolean;
   };
   islamicLoanConfig: {
-    murabaha: { 
-      enabled: boolean; 
-      profitRate: number; 
-      maxDuration: number;
-      minDownPayment?: number;
-      latePenalty?: number;
-    };
-    musharaka: { 
-      enabled: boolean; 
-      profitSharingRatio: number; 
-      maxDuration: number;
-      lossSharingRatio?: number;
-      managementFee?: number;
-    };
-    salam: { 
-      enabled: boolean; 
-      deliveryPeriod: number; 
-      maxAdvance: number;
-      commodityType?: string;
-      deliveryPenalty?: number;
-    };
-    qardHasanah: { 
-      enabled: boolean; 
-      serviceFee: number; 
-      maxAmount: number; 
-      maxDuration: number;
-      specialConsideration?: string;
-    };
-    istisna: { 
-      enabled: boolean; 
-      progressPayment: boolean; 
-      maxDuration: number;
-    };
-    mudaraba: { 
-      enabled: boolean; 
-      profitSharingRatio: number; 
-      maxInvestment: number;
-    };
-    tawarruq: { 
-      enabled: boolean; 
-      commodityType: string; 
-      maxAmount: number;
-    };
-    ijarah: { 
-      enabled: boolean; 
-      rentalRate: number; 
-      securityDeposit: number; 
-      maxDuration: number;
-      maintenanceResponsibility?: string;
-    };
-    kafalah: { 
-      enabled: boolean; 
-      guaranteeFee: number; 
-      maxGuaranteeAmount: number;
-      minGuarantorSavings?: number;
-      maxGuarantors?: number;
-    };
+    murabaha: { enabled: boolean; profitRate: number; maxDuration: number; minDownPayment?: number; latePenalty?: number; };
+    musharaka: { enabled: boolean; profitSharingRatio: number; maxDuration: number; lossSharingRatio?: number; managementFee?: number; };
+    salam: { enabled: boolean; deliveryPeriod: number; maxAdvance: number; commodityType?: string; deliveryPenalty?: number; };
+    qardHasanah: { enabled: boolean; serviceFee: number; maxAmount: number; maxDuration: number; specialConsideration?: string; };
+    istisna: { enabled: boolean; progressPayment: boolean; maxDuration: number; };
+    mudaraba: { enabled: boolean; profitSharingRatio: number; maxInvestment: number; };
+    tawarruq: { enabled: boolean; commodityType: string; maxAmount: number; };
+    ijarah: { enabled: boolean; rentalRate: number; securityDeposit: number; maxDuration: number; maintenanceResponsibility?: string; };
+    kafalah: { enabled: boolean; guaranteeFee: number; maxGuaranteeAmount: number; minGuarantorSavings?: number; maxGuarantors?: number; };
   };
   collection: {
     allowedPaymentMethods: ('cash' | 'bank' | 'bikash' | 'nogod' | 'rocket')[];
@@ -202,7 +134,9 @@ export interface SomitySettings {
     reminderAfterDays?: number;
     smsReminder?: boolean;
     emailReminder?: boolean;
-    collectorSettings?: CollectorConfig; // 👈 নতুন ফিল্ড
+    collectorSettings?: CollectorConfig;
+    // ✅ নতুন ফিচার: কালেক্টরের নিজস্ব ব্যাংক অ্যাকাউন্ট ব্যবহারের অনুমতি
+    allowCollectorPersonalAccount?: boolean;  // 👈 এটা যোগ করুন
   };
   financial: {
     fiscalYearStart: string;
@@ -210,7 +144,7 @@ export interface SomitySettings {
     currencyCode: string;
     decimalPlaces: number;
     dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD' | 'DD-MMM-YYYY';
-    currencyPosition: 'before' | 'after'; // ৳1000 or 1000 ৳
+    currencyPosition: 'before' | 'after';
     thousandSeparator: string;
     decimalSeparator: string;
     enableNotifications: boolean;
@@ -262,19 +196,15 @@ export const DEFAULT_SOMITY_SETTINGS: SomitySettings = {
     establishedYear: new Date().getFullYear(),
     registrationNumber: '',
     taxId: '',
-    alternativePhone: '',  // 👈 ডিফল্ট ভ্যালু
-    fax: '',                // 👈 ডিফল্ট ভ্যালু
-    // ওয়াটারমার্ক ডিফল্ট ভ্যালু
+    alternativePhone: '',
+    fax: '',
     watermarkText: 'স্মৃতি চিরন্তন',
     watermarkOpacity: 0.1,
     watermarkEnabled: true,
-    watermarkRotation: -12  // 👈 ডিফল্ট -12 ডিগ্রী (বাঁ দিকে ঘোরানো)
+    watermarkRotation: -12
   },
-  bankAccounts: [],
-  collectorBanking: {
-    useCollectorBankAccounts: false,
-    collectorBankAccounts: []
-  },
+  // ❌ bankAccounts: [],  // DELETE this line
+  // ❌ collectorBanking: { ... },  // DELETE this line
   share: {
     perShareValue: 1000,
     minShare: 1,
@@ -326,63 +256,15 @@ export const DEFAULT_SOMITY_SETTINGS: SomitySettings = {
     autoDisburseAfterApproval: true
   },
   islamicLoanConfig: {
-    murabaha: { 
-      enabled: true, 
-      profitRate: 12, 
-      maxDuration: 24,
-      minDownPayment: 20,
-      latePenalty: 2
-    },
-    musharaka: { 
-      enabled: true, 
-      profitSharingRatio: 50, 
-      maxDuration: 36,
-      lossSharingRatio: 100,
-      managementFee: 1
-    },
-    salam: { 
-      enabled: true, 
-      deliveryPeriod: 6, 
-      maxAdvance: 80,
-      commodityType: 'Agricultural Products',
-      deliveryPenalty: 1
-    },
-    qardHasanah: { 
-      enabled: true, 
-      serviceFee: 0, 
-      maxAmount: 50000, 
-      maxDuration: 12,
-      specialConsideration: 'all'
-    },
-    istisna: { 
-      enabled: true, 
-      progressPayment: true, 
-      maxDuration: 24
-    },
-    mudaraba: { 
-      enabled: true, 
-      profitSharingRatio: 60, 
-      maxInvestment: 100000
-    },
-    tawarruq: { 
-      enabled: true, 
-      commodityType: 'Commodity', 
-      maxAmount: 50000
-    },
-    ijarah: { 
-      enabled: true, 
-      rentalRate: 2, 
-      securityDeposit: 10, 
-      maxDuration: 24,
-      maintenanceResponsibility: 'lessee'
-    },
-    kafalah: { 
-      enabled: true, 
-      guaranteeFee: 1, 
-      maxGuaranteeAmount: 50000,
-      minGuarantorSavings: 10000,
-      maxGuarantors: 2
-    }
+    murabaha: { enabled: true, profitRate: 12, maxDuration: 24, minDownPayment: 20, latePenalty: 2 },
+    musharaka: { enabled: true, profitSharingRatio: 50, maxDuration: 36, lossSharingRatio: 100, managementFee: 1 },
+    salam: { enabled: true, deliveryPeriod: 6, maxAdvance: 80, commodityType: 'Agricultural Products', deliveryPenalty: 1 },
+    qardHasanah: { enabled: true, serviceFee: 0, maxAmount: 50000, maxDuration: 12, specialConsideration: 'all' },
+    istisna: { enabled: true, progressPayment: true, maxDuration: 24 },
+    mudaraba: { enabled: true, profitSharingRatio: 60, maxInvestment: 100000 },
+    tawarruq: { enabled: true, commodityType: 'Commodity', maxAmount: 50000 },
+    ijarah: { enabled: true, rentalRate: 2, securityDeposit: 10, maxDuration: 24, maintenanceResponsibility: 'lessee' },
+    kafalah: { enabled: true, guaranteeFee: 1, maxGuaranteeAmount: 50000, minGuarantorSavings: 10000, maxGuarantors: 2 }
   },
   collection: {
     allowedPaymentMethods: ['cash', 'bank', 'bikash', 'nogod', 'rocket'],
@@ -402,10 +284,8 @@ export const DEFAULT_SOMITY_SETTINGS: SomitySettings = {
     reminderAfterDays: 7,
     smsReminder: true,
     emailReminder: true,
-    collectorSettings: {  // 🆕 ADD THIS
-      enabled: true,
-      collectors: []
-    }
+    collectorSettings: { enabled: true, collectors: [] },
+    allowCollectorPersonalAccount: false  // 👈 নতুন ফিল্ড যোগ করুন
   },
   financial: {
     fiscalYearStart: 'July-2021',
@@ -451,3 +331,26 @@ export const DEFAULT_SOMITY_SETTINGS: SomitySettings = {
     requireApproval: true
   }
 };
+// Add this export at the end of the file or where BankAccount is defined
+export interface BankAccount {
+  id?: string;
+  accountId: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  branchName?: string;
+  accountType: string;
+  isActive: boolean;
+  balance: number;
+  openingBalance?: number;
+  routingNumber?: string;
+  swiftCode?: string;
+  notes?: string;
+  ownerType: 'somity' | 'collector';
+  ownerId: string;
+  collectorId?: string;
+  collectorName?: string;
+  collectorMemberId?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}

@@ -1,5 +1,6 @@
 // src/modules/contributions/pages/ContributionEntry.tsx
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X, Loader2, Hash, FileText, UserCheck, Calendar } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
@@ -9,7 +10,7 @@ import { memberDueService } from '../services/memberDueService';
 import { feesService } from '../services/contributionService';
 import { toast } from 'sonner';
 
-// 🧮 Calculator utilities
+// Utilities
 import {
   calculatePaymentMonths,
   calculateTotalAmount,
@@ -17,22 +18,23 @@ import {
   generateReceiptId,
 } from '../../../utils/calculations/contributionCalculator';
 
-// 🛡️ Validator
+// Validator
 import { validateContributionEntry } from '../../../utils/validators/contributionValidator';
 
-// 🧩 Components
+// Components
 import MemberSearchCard from '../components/MemberSearchCard';
 import type { SimpleMember as MemberCardSimpleMember } from '../components/MemberSearchCard';
 import ContributionStatusCard from '../components/ContributionStatusCard';
 import PaymentMethodSelector from '../components/PaymentMethodSelector';
 import MonthSelector from '../components/MonthSelector';
-import CollectionStatusSection from '../components/CollectionStatusSection';
 import ContributionSummary from '../components/ContributionSummary';
 import CollectorSelect from '../components/CollectorSelect';
-
+import BankAccountSelector from '../components/BankAccountSelector';
 
 import type { CollectorAssignment } from '../../../types';
-import type { BankAccount } from '../../../types/settings';
+
+// Use the correct hook from settings module
+import { useBankAccountsForSettings } from '../../settings/hooks/useBankAccountsForSettings';
 
 // Types
 interface SimpleMember extends MemberCardSimpleMember {
@@ -98,16 +100,14 @@ const INITIAL_FORM_DATA: FormData = {
   totalAmount: 0,
 };
 
-// ============================================
-// MAIN PAGE COMPONENT
-// ============================================
-
 const ContributionEntry: React.FC = () => {
   const navigate = useNavigate();
   const { user, userData, currentMember } = useAuth();
   const { settings } = useSomitySettings();
 
-  // --- State ---
+  const { accounts: somityBankAccounts, loading: somityBankLoading } = useBankAccountsForSettings('somity');
+  const { accounts: collectorBankAccounts, loading: collectorBankLoading } = useBankAccountsForSettings('collector');
+
   const [members, setMembers] = useState<SimpleMember[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMember, setSelectedMember] = useState<SimpleMember | null>(null);
@@ -119,34 +119,36 @@ const ContributionEntry: React.FC = () => {
   const [showDepositorList, setShowDepositorList] = useState(false);
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
 
-  // --- Settings ---
   const collectionSettings = settings?.collection;
   const allowedPaymentMethods = collectionSettings?.allowedPaymentMethods || ['cash', 'bank', 'bikash', 'nogod', 'rocket'];
   const autoGenerateReceipt = collectionSettings?.autoGenerateReceipt ?? true;
   const receiptPrefix = collectionSettings?.receiptPrefix || 'RCPT-';
   const receiptFooter = collectionSettings?.receiptFooter || '';
   
-  // Collector settings
   const collectorSettings = settings?.collection?.collectorSettings;
   const collectorEnabled = collectorSettings?.enabled ?? false;
   const activeCollectors: CollectorAssignment[] = collectorSettings?.collectors?.filter((c: CollectorAssignment) => c.isActive) || [];
   const selectedCollector = activeCollectors.find(c => c.id === selectedCollectorId);
-  const somityBankAccounts: BankAccount[] = (settings?.bankAccounts || []).filter((account: BankAccount) => account.isActive);
-  const collectorBankAccounts: BankAccount[] = settings?.collectorBanking?.useCollectorBankAccounts
-    ? (settings?.collectorBanking?.collectorBankAccounts || []).filter((account: BankAccount) =>
-        account.isActive && selectedCollector?.memberId && account.collectorMemberId === selectedCollector.memberId
-      )
-    : [];
-  const bankAccountsForSelection: BankAccount[] =
-    formData.payType === 'bank' && formData.collectionStatus === 'collected'
-      ? collectorBankAccounts
-      : formData.collectionStatus === 'deposited'
-      ? somityBankAccounts
-      : [];
+
+  const activeSomityAccounts = somityBankAccounts.filter(acc => acc.isActive);
+  const activeCollectorAccounts = collectorBankAccounts.filter(acc => acc.isActive);
+
+  const bankAccountsForSelection = useMemo(() => {
+    if (formData.payType === 'bank' && formData.collectionStatus === 'collected') {
+      return activeCollectorAccounts;
+    }
+    if (formData.collectionStatus === 'deposited') {
+      return activeSomityAccounts;
+    }
+    return [];
+  }, [formData.payType, formData.collectionStatus, activeSomityAccounts, activeCollectorAccounts]);
+
   const bankAccountContextLabel =
     formData.payType === 'bank' && formData.collectionStatus === 'collected'
-      ? 'Collector bank account'
-      : 'Somity bank account';
+      ? 'কালেক্টরের ব্যাংক অ্যাকাউন্ট'
+      : 'সোমিটি ব্যাংক অ্যাকাউন্ট';
+
+  const isLoadingBankAccounts = somityBankLoading || collectorBankLoading;
 
   const { startMonth: somityStartMonth, startYear: somityStartYear } = parseFiscalYearStart(
     settings?.financial?.fiscalYearStart || 'July-2021'
@@ -164,12 +166,10 @@ const ContributionEntry: React.FC = () => {
         .slice(0, 8)
     : members.slice(0, 8);
 
-  // --- Effects ---
   useEffect(() => {
     loadMembers();
   }, []);
 
-  // Generate receipt ID
   useEffect(() => {
     if (autoGenerateReceipt && selectedMember) {
       setGeneratedReceiptId(generateReceiptId(receiptPrefix));
@@ -178,7 +178,6 @@ const ContributionEntry: React.FC = () => {
     }
   }, [autoGenerateReceipt, selectedMember, receiptPrefix]);
 
-  // Calculate months
   useEffect(() => {
     if (formData.startMonth && formData.startYear && formData.numberOfMonths > 0 && selectedMember) {
       const months = calculatePaymentMonths(
@@ -192,7 +191,6 @@ const ContributionEntry: React.FC = () => {
     }
   }, [formData.numberOfMonths, formData.startMonth, formData.startYear, selectedMember]);
 
-  // Close member list on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -207,7 +205,6 @@ const ContributionEntry: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // --- Data Fetching ---
   const loadMembers = async () => {
     try {
       const membersData = await memberService.getSimpleMembers();
@@ -239,7 +236,6 @@ const ContributionEntry: React.FC = () => {
     }
   };
 
-  // --- Handlers ---
   const handleSelectMember = async (member: MemberCardSimpleMember) => {
     const fullMember = member as SimpleMember;
     setSelectedMember(fullMember);
@@ -259,10 +255,10 @@ const ContributionEntry: React.FC = () => {
   };
 
   const handleSelectBankAccount = (accountId: string) => {
-    const account = bankAccountsForSelection.find(item => item.id === accountId);
+    const account = bankAccountsForSelection.find(item => item.id === accountId || item.accountId === accountId);
     setFormData(prev => ({
       ...prev,
-      bankAccountId: account?.id || '',
+      bankAccountId: account?.accountId || account?.id || '',
       bankAccountName: account?.accountName || '',
       bankName: account ? `${account.bankName} - ${account.accountName}` : '',
     }));
@@ -277,6 +273,8 @@ const ContributionEntry: React.FC = () => {
   const handleResetForm = () => {
     handleClearMember();
     setFormData(INITIAL_FORM_DATA);
+    setGeneratedReceiptId('');
+    setSelectedCollectorId('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -312,18 +310,13 @@ const ContributionEntry: React.FC = () => {
     setSubmitting(true);
 
     try {
-      // Current user (who is entering the data into system)
       const currentUserName = currentMember?.fullName || userData?.fullName || 'System';
       const currentUserMemberId = currentMember?.memberId || 'SYS';
       const currentUserId = user?.uid || 'system';
       
-      // Selected collector (who collected the money from member)
       const result = await feesService.addFeePayment({
-        // Member info
         memberId: selectedMember.memberId,
         memberName: selectedMember.fullName,
-        
-        // Payment info
         months: formData.calculatedMonths,
         totalAmount: formData.totalAmount,
         paymentType: formData.payType,
@@ -331,23 +324,15 @@ const ContributionEntry: React.FC = () => {
         referenceNo: formData.referenceNo || undefined,
         remarks: formData.remarks || undefined,
         memberShare: selectedMember.shareCount,
-        
-        // ENTERED BY = Current user (who is using the system)
         enteredById: currentUserId,
         enteredByName: currentUserName,
         enteredByMemberId: currentUserMemberId,
-        
-        // COLLECTOR = Selected collector (who collected money from member)
         collectorId: selectedCollector?.id,
         collectorName: selectedCollector?.memberName,
         collectorMemberId: selectedCollector?.memberId,
-        
-        // Receipt settings
         receiptId: autoGenerateReceipt ? generatedReceiptId : undefined,
         receiptFooter: receiptFooter,
         receiptPrefix: receiptPrefix,
-        
-        // Collection status
         collectionStatus: formData.collectionStatus,
         bankAccountId: formData.bankAccountId || undefined,
         bankAccountName: formData.bankAccountName || undefined,
@@ -358,34 +343,35 @@ const ContributionEntry: React.FC = () => {
         depositorId: shouldShowBankDepositFields ? formData.depositorId : undefined,
       });
 
-      toast.success(
-        <div>
-          <p className="font-semibold">✅ অবদান জমা সফল!</p>
-          <p className="text-sm">{formData.numberOfMonths} মাসের অবদান জমা হয়েছে</p>
-          <p className="text-xs font-mono mt-1">রসিদ নং: {result.receiptId}</p>
-        </div>
-      );
+      // ✅ Reset form first
+      handleResetForm();
+      setSubmitting(false);
 
-      setTimeout(() => {
-        navigate(`/fees/receipt/${result.receiptId}`);
-      }, 1500);
+      // ✅ Simple alert that ALWAYS works
+      const message = `✅ অবদান জমা সফল!\n\nসদস্য: ${selectedMember.fullName}\nমাস: ${formData.numberOfMonths}\nপরিমাণ: ৳${formData.totalAmount.toLocaleString()}\n\nরসিদ নং: ${result.receiptId}\n\nOK ক্লিক করলে রসিদ দেখাবে`;
+      
+      const userClicked = window.confirm(message);
+      
+      if (userClicked) {
+        // Navigate to receipt
+        window.location.href = `/contributions/receipt/${result.receiptId}`;
+      } else {
+        // Go to history
+        window.location.href = '/contributions/history';
+      }
+      
     } catch (error: any) {
       console.error('Error recording contribution:', error);
-      toast.error(error.message || 'অবদান জমা করতে ব্যর্থ হয়েছে');
-    } finally {
+      alert('ত্রুটি: ' + (error.message || 'অবদান জমা করতে ব্যর্থ হয়েছে'));
       setSubmitting(false);
     }
   };
 
   const isFormValid = formData.calculatedMonths.length > 0 && selectedMember !== null && !!formData.paymentDate;
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center p-3 bg-blue-100 rounded-full mb-4">
             <FileText className="h-8 w-8 text-blue-600" />
@@ -395,7 +381,6 @@ const ContributionEntry: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT COLUMN */}
           <div className="lg:col-span-1 space-y-6 member-search-area">
             <MemberSearchCard
               members={members}
@@ -410,7 +395,6 @@ const ContributionEntry: React.FC = () => {
             <ContributionStatusCard feeStatus={feeStatus} />
           </div>
 
-          {/* RIGHT COLUMN - ENTRY FORM */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
@@ -424,7 +408,6 @@ const ContributionEntry: React.FC = () => {
               <div className="p-6">
                 {selectedMember && feeStatus ? (
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Receipt ID + Payment Date + Payment Method */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -472,7 +455,6 @@ const ContributionEntry: React.FC = () => {
                       />
                     </div>
 
-                    {/* Reference for non-cash */}
                     {['bank', 'bikash', 'nogod', 'rocket'].includes(formData.payType) && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -489,7 +471,6 @@ const ContributionEntry: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Collector Selection - needed before collector bank account filtering */}
                     {collectorEnabled && (
                       <CollectorSelect
                         collectors={activeCollectors}
@@ -507,25 +488,96 @@ const ContributionEntry: React.FC = () => {
                       />
                     )}
 
-                    {/* Collection Status */}
-                    <CollectionStatusSection
-                      collectionStatus={formData.collectionStatus}
-                      payType={formData.payType}
-                      bankName={formData.bankName}
-                      bankReference={formData.bankReference}
-                      bankAccounts={bankAccountsForSelection}
-                      selectedBankAccountId={formData.bankAccountId}
-                      bankAccountContextLabel={bankAccountContextLabel}
-                      onStatusChange={(status) => setFormData(prev => ({
-                        ...prev,
-                        collectionStatus: status,
-                        bankAccountId: '',
-                        bankAccountName: '',
-                        bankName: '',
-                      }))}
-                      onBankInfoChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
-                      onBankAccountSelect={handleSelectBankAccount}
-                    />
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-yellow-800 mb-4 flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        টাকার অবস্থান (Collection Status)
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        {(['collected', 'deposited', 'transferred'] as const).map((status) => {
+                          const isSelected = formData.collectionStatus === status;
+                          let statusLabel = '';
+                          let statusDesc = '';
+                          let statusColor = '';
+                          
+                          if (status === 'collected') {
+                            statusLabel = 'সংগৃহীত';
+                            statusDesc = formData.payType === 'bank' ? 'ক্যাশিয়ারের ব্যক্তিগত অ্যাকাউন্টে' : 'ক্যাশিয়ারের কাছে নগদ';
+                            statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
+                          } else if (status === 'deposited') {
+                            statusLabel = 'জমা';
+                            statusDesc = 'সোমিটি ব্যাংক অ্যাকাউন্টে';
+                            statusColor = 'bg-green-100 text-green-700 border-green-200';
+                          } else {
+                            statusLabel = 'ট্রান্সফার্ড';
+                            statusDesc = 'অন্য অ্যাকাউন্টে';
+                            statusColor = 'bg-purple-100 text-purple-700 border-purple-200';
+                          }
+                          
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                collectionStatus: status,
+                                bankAccountId: '',
+                                bankAccountName: '',
+                                bankName: '',
+                              }))}
+                              className={`p-3 rounded-xl text-left transition-all border-2 ${
+                                isSelected
+                                  ? `${statusColor} border-current shadow-md`
+                                  : 'bg-white border-gray-200 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div>
+                                <p className="font-semibold">{statusLabel}</p>
+                                <p className="text-xs">{statusDesc}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {(formData.collectionStatus === 'deposited' || (formData.payType === 'bank' && formData.collectionStatus === 'collected')) && (
+                        <div className="mt-4 pt-4 border-t border-yellow-200">
+                          {formData.payType === 'bank' && formData.collectionStatus === 'collected' && (
+                            <div className="bg-blue-100 p-3 rounded-lg mb-4">
+                              <p className="text-sm text-blue-700">
+                                সদস্য ক্যাশিয়ারের ব্যক্তিগত ব্যাংক অ্যাকাউন্টে টাকা দিয়েছেন। নিচের তথ্য পূরণ করুন।
+                              </p>
+                            </div>
+                          )}
+                          
+                          <BankAccountSelector
+                            accounts={bankAccountsForSelection}
+                            selectedAccountId={formData.bankAccountId}
+                            onSelect={handleSelectBankAccount}
+                            label={bankAccountContextLabel}
+                            required={true}
+                            loading={isLoadingBankAccounts}
+                            accountType={formData.collectionStatus === 'deposited' ? 'somity' : 'collector'}
+                          />
+                          
+                          {bankAccountsForSelection.length > 0 && formData.bankAccountId && (
+                            <div className="mt-3">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                রেফারেন্স নম্বর (ঐচ্ছিক)
+                              </label>
+                              <input
+                                type="text"
+                                value={formData.bankReference}
+                                onChange={(e) => setFormData(prev => ({ ...prev, bankReference: e.target.value }))}
+                                className="w-full px-3 py-2 border rounded-lg"
+                                placeholder="স্লিপ নং / চেক নং / ট্রানজেকশন আইডি"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {shouldShowBankDepositFields && (
                       <div className="bg-green-50 border border-green-200 rounded-xl p-5">
@@ -543,7 +595,7 @@ const ContributionEntry: React.FC = () => {
                               type="date"
                               value={formData.depositDate}
                               onChange={(e) => setFormData(prev => ({ ...prev, depositDate: e.target.value }))}
-                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                               required
                             />
                           </div>
@@ -564,7 +616,7 @@ const ContributionEntry: React.FC = () => {
                                 setShowDepositorList(true);
                               }}
                               onFocus={() => setShowDepositorList(true)}
-                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                               placeholder="নাম টাইপ করুন"
                               required
                             />
@@ -596,7 +648,6 @@ const ContributionEntry: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Month Selector */}
                     <MonthSelector
                       startMonth={formData.startMonth}
                       startYear={formData.startYear}
@@ -609,14 +660,12 @@ const ContributionEntry: React.FC = () => {
                       onCountChange={(count) => setFormData(prev => ({ ...prev, numberOfMonths: count }))}
                     />
 
-                    {/* Amount Summary */}
                     <ContributionSummary
                       monthlyFee={selectedMember.monthlyFee}
                       numberOfMonths={formData.numberOfMonths}
                       totalAmount={formData.totalAmount}
                     />
 
-                    {/* Selected Collector Info - Blue background */}
                     {collectorEnabled && selectedCollectorId && (
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -640,7 +689,6 @@ const ContributionEntry: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Entry Info - Who entered the data (current user) - Gray background */}
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <FileText className="h-5 w-5 text-green-500" />
@@ -654,7 +702,6 @@ const ContributionEntry: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Remarks */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         মন্তব্য (ঐচ্ছিক)
@@ -668,7 +715,6 @@ const ContributionEntry: React.FC = () => {
                       />
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex justify-end gap-3 pt-4 border-t">
                       <button
                         type="button"
@@ -695,7 +741,6 @@ const ContributionEntry: React.FC = () => {
                     </div>
                   </form>
                 ) : (
-                  /* Empty State */
                   <div className="text-center py-20 text-gray-500">
                     <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <UserCheck className="h-12 w-12 text-gray-400" />

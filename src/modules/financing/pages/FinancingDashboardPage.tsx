@@ -55,10 +55,10 @@ const LoansDashboard: React.FC = () => {
   const collectionRate = stats.totalAmount > 0 ? Math.round((stats.totalCollected / stats.totalAmount) * 100) : 0;
 
   const quickActions = [
-    { title: 'New Loan Application', icon: <Plus className="h-5 w-5" />, href: '/loans/add', color: 'bg-blue-600' },
-    { title: 'Pending Applications', icon: <Clock className="h-5 w-5" />, href: '/loans/pending', color: 'bg-yellow-600' },
-    { title: 'Active Loans', icon: <TrendingUp className="h-5 w-5" />, href: '/loans/ActiveLoan', color: 'bg-green-600' },
-    { title: 'Loan Reports', icon: <Eye className="h-5 w-5" />, href: '/loans/reports', color: 'bg-purple-600' }
+    { title: 'New Loan Application', icon: <Plus className="h-5 w-5" />, href: '/financing/create', color: 'bg-blue-600' },
+    { title: 'Pending Applications', icon: <Clock className="h-5 w-5" />, href: '/financing/applications/pending', color: 'bg-yellow-600' },
+    { title: 'Active Loans', icon: <TrendingUp className="h-5 w-5" />, href: '/financing/active', color: 'bg-green-600' },
+    { title: 'Loan Reports', icon: <Eye className="h-5 w-5" />, href: '/financing/reports', color: 'bg-purple-600' }
   ];
 
   if (loading) {
@@ -120,7 +120,7 @@ const LoansDashboard: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
           <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
             <h3 className="font-semibold text-gray-800">Recent Loan Applications</h3>
-            <Link to="/loans/history" className="text-sm text-blue-600">View All <ArrowRight className="h-4 w-4 inline" /></Link>
+            <Link to="/financing/history" className="text-sm text-blue-600">View All <ArrowRight className="h-4 w-4 inline" /></Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -157,7 +157,7 @@ const LoansDashboard: React.FC = () => {
           {recentLoans.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No loan applications yet</p>
-              <Link to="/loans/add" className="mt-2 inline-block text-blue-600">Apply for a loan</Link>
+              <Link to="/financing/create" className="mt-2 inline-block text-blue-600">Apply for a loan</Link>
             </div>
           )}
         </div>
