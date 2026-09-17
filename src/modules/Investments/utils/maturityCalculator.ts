@@ -1,68 +1,55 @@
-import type { Investment } from '../types/investment.types';
+// src/modules/Investments/utils/maturityCalculator.ts
 
-export interface MaturityAlert {
-  investmentId: string;
-  memberName: string;
-  amount: number;
-  maturityDate: Date;
-  daysRemaining: number;
-  expectedProfit: number;
-}
+import { parseToDate } from '../../../utils/formatters/dateFormatter';  // ✅ Use global
+import { Investment } from '../types/investment.types';
+import { INVESTMENT_STATUS_LABELS } from '../constants/investmentConstants';
+import { getMonthsDifference } from './investmentCalculator';
 
-export const maturityCalculator = {
-  getUpcomingMaturities(investments: Investment[], daysThreshold: number = 30): MaturityAlert[] {
-    const today = new Date();
-    const thresholdDate = new Date();
-    thresholdDate.setDate(today.getDate() + daysThreshold);
+export const checkMaturityStatus = (investment: Investment): boolean => {
+  if (!investment.maturityDate) return false;
+  const maturityDate = parseToDate(investment.maturityDate);
+  if (!maturityDate) return false;
+  const today = new Date();
+  return maturityDate <= today;
+};
 
-    return investments
-      .filter(inv => inv.status === 'active')
-      .filter(inv => inv.maturityDate <= thresholdDate && inv.maturityDate >= today)
-      .map(inv => ({
-        investmentId: inv.id!,
-        memberName: inv.memberName,
-        amount: inv.amount,
-        maturityDate: inv.maturityDate,
-        daysRemaining: Math.ceil((inv.maturityDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
-        expectedProfit: inv.expectedProfitAmount
-      }))
-      .sort((a, b) => a.daysRemaining - b.daysRemaining);
-  },
+export const getDaysToMaturity = (investment: Investment): number | null => {
+  if (!investment.maturityDate) return null;
+  const maturityDate = parseToDate(investment.maturityDate);
+  if (!maturityDate) return null;
+  const today = new Date();
+  const diffTime = maturityDate.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
-  getOverdueMaturities(investments: Investment[]): MaturityAlert[] {
-    const today = new Date();
-    return investments
-      .filter(inv => inv.status === 'active')
-      .filter(inv => inv.maturityDate < today)
-      .map(inv => ({
-        investmentId: inv.id!,
-        memberName: inv.memberName,
-        amount: inv.amount,
-        maturityDate: inv.maturityDate,
-        daysRemaining: Math.ceil((inv.maturityDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
-        expectedProfit: inv.expectedProfitAmount
-      }));
-  },
+export const getMonthsToMaturity = (investment: Investment): number | null => {
+  if (!investment.maturityDate) return null;
+  const maturityDate = parseToDate(investment.maturityDate);
+  if (!maturityDate) return null;
+  const today = new Date();
+  const months = getMonthsDifference(today, maturityDate);
+  return months > 0 ? months : 0;
+};
 
-  getMaturitySummary(investments: Investment[]): {
-    total: number;
-    upcoming: number;
-    overdue: number;
-    thisMonth: number;
-    nextMonth: number;
-  } {
-    const today = new Date();
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+export const getMaturityStatusText = (investment: Investment): string => {
+  if (investment.status !== 'active') return INVESTMENT_STATUS_LABELS[investment.status];
+  
+  const daysToMaturity = getDaysToMaturity(investment);
+  if (daysToMaturity === null) return 'অনির্দিষ্ট মেয়াদ';
+  if (daysToMaturity < 0) return 'মেয়াদ উত্তীর্ণ';
+  if (daysToMaturity === 0) return 'আজ মেয়াদ শেষ';
+  if (daysToMaturity <= 30) return `${daysToMaturity} দিন বাকি`;
+  if (daysToMaturity <= 365) return `${Math.floor(daysToMaturity / 30)} মাস বাকি`;
+  return `${Math.floor(daysToMaturity / 365)} বছর বাকি`;
+};
 
-    const activeInvestments = investments.filter(inv => inv.status === 'active');
-    
-    return {
-      total: activeInvestments.length,
-      upcoming: activeInvestments.filter(inv => inv.maturityDate >= today).length,
-      overdue: activeInvestments.filter(inv => inv.maturityDate < today).length,
-      thisMonth: activeInvestments.filter(inv => inv.maturityDate <= endOfMonth).length,
-      nextMonth: activeInvestments.filter(inv => inv.maturityDate > endOfMonth && inv.maturityDate <= endOfNextMonth).length
-    };
-  }
+export const getMaturityStatusColor = (investment: Investment): string => {
+  if (investment.status !== 'active') return 'text-red-600';
+  
+  const daysToMaturity = getDaysToMaturity(investment);
+  if (daysToMaturity === null) return 'text-gray-600';
+  if (daysToMaturity < 0) return 'text-red-600';
+  if (daysToMaturity <= 30) return 'text-orange-600';
+  if (daysToMaturity <= 90) return 'text-yellow-600';
+  return 'text-green-600';
 };

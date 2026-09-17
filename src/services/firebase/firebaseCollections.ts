@@ -68,6 +68,12 @@ export const collections = {
   bankAccount: (bankId: string) => doc(db, 'bank_accounts', bankId),
 
   // ============================================
+  // Bank Transactions (New)
+  // ============================================
+  bankTransactions: () => collection(db, 'bank_transactions'),
+  bankTransaction: (transactionId: string) => doc(db, 'bank_transactions', transactionId),
+
+  // ============================================
   // CASH BALANCES (Cashier/Collector cash in hand)
   // ============================================
   cashBalances: () => collection(db, 'cash_balances'),

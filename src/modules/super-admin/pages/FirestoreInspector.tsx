@@ -156,6 +156,13 @@ const FirestoreInspector: React.FC = () => {
           const docs = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
           return { docs: docs.slice(0, 1), total: docs.length };
         } },
+
+        { title: 'bank_transactions', label: 'bank_transactions', type: 'collection', loader: async () => {
+          const snapshot = await getDocs(collections.bankTransactions());
+          const docs = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
+          return { docs: docs.slice(0, 1), total: docs.length };
+
+        } },
         { title: 'cash_balances', label: 'cash_balances', type: 'collection', loader: async () => {
           const snapshot = await getDocs(collections.cashBalances());
           const docs = snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));

@@ -11,6 +11,7 @@ export type TransactionType =
   | 'loan_repayment'    
   | 'investment'        
   | 'investment_return' 
+  | 'profit'            // 🆕 লাভ প্রাপ্তি
   | 'expense'           
   | 'transfer'          
   | 'adjustment';
@@ -23,6 +24,7 @@ export type SourceCollection =
   | 'loans'
   | 'loan_repayments'
   | 'investments'
+  | 'profit_records'    // 🆕
   | 'expenses';
 
 // ============================================
@@ -43,23 +45,25 @@ export type HandlerType =
   | 'collector'   
   | 'cashier'     
   | 'member'      
+  | 'external'    // 🆕 বাহ্যিক ব্যক্তি
+  | 'somity'      // 🆕 সমিতি
   | 'admin';
 
 // ============================================
-// 🏦 HOLDING TYPE (Where is the money RIGHT NOW)
+// 🏦 HOLDING TYPE
 // ============================================
 export type HoldingType = 
-  | 'collector'      // Money with collector (cash or mobile wallet)
-  | 'somity_bank';   // Money in somity bank account
+  | 'collector'      
+  | 'somity_bank';
 
 // ============================================
-// 📊 TRANSACTION STATUS (Simplified)
+// 📊 TRANSACTION STATUS
 // ============================================
 export type TransactionStatus = 
-  | 'pending'     // Money with collector, not yet in bank
-  | 'completed'   // Money in somity bank
-  | 'cancelled'   // Transaction cancelled
-  | 'reversed';   // Transaction reversed
+  | 'pending'     
+  | 'completed'   
+  | 'cancelled'   
+  | 'reversed';
 
 // ============================================
 // 🎯 DESTINATION TYPES
@@ -70,14 +74,15 @@ export type DestinationType =
   | 'collector_bank'      
   | 'mobile_wallet'       
   | 'member_account'      
-  | 'expense_payment';
+  | 'expense_payment'
+  | 'investment';         // 🆕 বিনিয়োগের জন্য
 
 // ============================================
 // 📈 TRANSACTION DIRECTION
 // ============================================
 export type TransactionDirection = 
-  | 'in'   // Money coming INTO somity
-  | 'out'; // Money going OUT OF somity
+  | 'in'   
+  | 'out';
 
 // ============================================
 // 🏦 SIMPLIFIED BANK TRANSACTION INTERFACE
@@ -98,6 +103,11 @@ export interface BankTransaction {
   memberId?: string;
   memberName?: string;
   
+  // 🆕 Investment specific
+  investmentId?: string;
+  coInvestorId?: string;
+  profitRecordId?: string;
+  
   // 💰 AMOUNT
   amount: number;
   fee?: number;
@@ -114,19 +124,19 @@ export interface BankTransaction {
   handlerName: string;
   handlerMemberId?: string;
   
-  // 🆕 WHERE IS THE MONEY? (Key field)
-  holdingType: HoldingType;  // 'collector' or 'somity_bank'
+  // 🆕 WHERE IS THE MONEY?
+  holdingType: HoldingType;
   
   // 🎯 DESTINATION
   destinationType: DestinationType;
   destinationBankAccountId?: string;
   destinationCollectorId?: string;
   
-  // 📊 STATUS (Simplified - no settlementStatus)
-  status: TransactionStatus;     // 'pending' or 'completed'
-  affectsBalance: boolean;       // true = in bank, false = with collector
+  // 📊 STATUS
+  status: TransactionStatus;
+  affectsBalance: boolean;
   
-  // 🏦 DEPOSIT INFO (When collector deposits to bank)
+  // 🏦 DEPOSIT INFO
   depositReference?: string;
   depositBankAccountId?: string;
   depositDate?: Date | Timestamp;
@@ -167,11 +177,15 @@ export interface CreateBankTransactionRequest {
   handlerId: string;
   handlerName: string;
   handlerType: HandlerType;
-  holdingType: HoldingType;           // REQUIRED
+  holdingType: HoldingType;
   destinationType: DestinationType;
   destinationBankAccountId?: string;
   memberId?: string;
   memberName?: string;
+  // 🆕 Investment specific
+  investmentId?: string;
+  coInvestorId?: string;
+  profitRecordId?: string;
   remarks?: string;
   depositReference?: string;
 }

@@ -531,13 +531,6 @@ const AddMember = () => {
                             placeholder="Enter mother's name" />
                           {getError('family.motherName') && <p className="mt-1 text-xs text-red-500">{getError('family.motherName')}</p>}
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Name</label>
-                          <input type="text" value={formData.family.spouseName}
-                            onChange={(e) => handleInputChange('family.spouseName', e.target.value)}
-                            className={inputClass()}
-                            placeholder="Enter spouse name" />
-                        </div>
                       </div>
                     </div>
 
@@ -570,12 +563,6 @@ const AddMember = () => {
                             className={inputClass()}
                             placeholder="Enter nominee phone" />
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Share (%)</label>
-                          <input type="number" value={formData.family.nominee.share || ''}
-                            onChange={(e) => handleInputChange('family.nominee.share', parseInt(e.target.value) || 0)}
-                            className={inputClass()} min="0" max="100" placeholder="0" />
-                        </div>
                       </div>
                     </div>
 
@@ -604,7 +591,9 @@ const AddMember = () => {
                           <select value={formData.membership.role}
                             onChange={(e) => handleInputChange('membership.role', e.target.value as UserRole)}
                             className={inputClass()}>
-                            <option value="member">Member</option><option value="cashier">Cashier</option><option value="admin">Admin</option>
+                            <option value="admin">Admin</option><option value="president">President</option>
+                            <option value="manager">Manager</option><option value="accountant">Accountant</option>
+                            <option value="cashier">Cashier</option><option value="member">Member</option>
                           </select>
                         </div>
                         <div>

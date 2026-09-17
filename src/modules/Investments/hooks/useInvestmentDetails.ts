@@ -1,64 +1,64 @@
-import { useState, useEffect, useCallback } from 'react';
+// src/modules/Investments/hooks/useInvestmentDetails.ts
+
+import { useState, useEffect } from 'react';
 import { investmentService } from '../services/investmentService';
 import type { Investment } from '../types/investment.types';
+import type { InvestmentTransaction } from '../types/investmentTransaction.types';
+import { getDaysToMaturity, getMaturityStatusText } from '../utils/maturityCalculator';
+import { formatCurrency } from '../../../utils/formatters/currencyFormatter';  // ✅ Use global
+import { formatDate } from '../../../utils/formatters/dateFormatter';  // ✅ Use global
 
-export const useInvestmentDetails = (id: string | undefined) => {
+export const useInvestmentDetails = (investmentId: string) => {
   const [investment, setInvestment] = useState<Investment | null>(null);
+  const [transactions, setTransactions] = useState<InvestmentTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadInvestment = useCallback(async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await investmentService.getById(id);
-      setInvestment(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load investment details');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  const [daysToMaturity, setDaysToMaturity] = useState<number | null>(null);
+  const [maturityStatusText, setMaturityStatusText] = useState<string>('');
 
   useEffect(() => {
-    loadInvestment();
-  }, [loadInvestment]);
+    if (investmentId) {
+      loadData();
+    }
+  }, [investmentId]);
 
-  const updateInvestment = useCallback(async (data: Partial<Investment>) => {
-    if (!id) return;
+  const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      await investmentService.update(id, data);
-      await loadInvestment();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update investment');
-      throw err;
+      const inv = await investmentService.getInvestment(investmentId);
+      setInvestment(inv);
+      
+      const txns = await investmentService.getInvestmentTransactions(investmentId);
+      setTransactions(txns);
+      
+      if (inv) {
+        setDaysToMaturity(getDaysToMaturity(inv));
+        setMaturityStatusText(getMaturityStatusText(inv));
+      }
+    } catch (error) {
+      console.error('Error loading investment details:', error);
     } finally {
       setLoading(false);
     }
-  }, [id, loadInvestment]);
+  };
 
-  const markAsMatured = useCallback(async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      await investmentService.markAsMatured(id);
-      await loadInvestment();
-    } catch (err: any) {
-      setError(err.message || 'Failed to mark as matured');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [id, loadInvestment]);
+  const refresh = () => {
+    loadData();
+  };
+
+  // Helper functions using global formatters
+  const formatAmount = (amount: number) => formatCurrency(amount);
+  const formatDateStr = (date: any) => formatDate(date, 'DD/MM/YYYY');
 
   return {
     investment,
+    transactions,
     loading,
-    error,
-    updateInvestment,
-    markAsMatured,
-    reload: loadInvestment
+    daysToMaturity,
+    maturityStatusText,
+    formatAmount,
+    formatDateStr,
+    refresh
   };
 };
+
+export default useInvestmentDetails;

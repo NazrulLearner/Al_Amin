@@ -17,15 +17,17 @@ export const membersMenu = [
         label: "Add Member",
         path: "/members/add",
         icon: "user-plus",
-        roles: ["admin", "super_admin"],
+        roles: ["admin", "super_admin"],  // cashier কি member add করতে পারবে? যদি না পারে তাহলে cashier এর roles থেকে "add_member" permission remove করতে হবে
       },
       {
         key: "my_profile",
         label: "My Profile",
         path: "/my-profile",
         icon: "user",
-        roles: ["member", "cashier", "collector"],
+        roles: ["admin", "cashier", "collector", "member", "super_admin"],  // সবাই নিজের প্রোফাইল দেখতে পারে
       },
     ],
   },
 ];
+
+export default membersMenu;

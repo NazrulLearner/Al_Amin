@@ -1,3 +1,6 @@
+// src/app/layouts/Topbar.tsx
+// অ্যাপের উপরের বার। এখানে নোটিফিকেশন, ইউজার মেনু, এবং হ্যামবার্গার বাটন থাকে।
+
 import React, { useState } from 'react';
 import { useAuth } from '../providers/AuthProvider';
 import { 
@@ -11,16 +14,27 @@ import {
   Sun,
   Settings,
   HelpCircle,
-  Shield
+  Shield,
+  Menu // ← হ্যামবার্গার আইকনের জন্য
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Topbar: React.FC = () => {
+// ===== প্রপস টাইপ ডিফাইন =====
+// toggleSidebar ফাংশন প্যারেন্ট (DashboardLayout) থেকে আসবে
+interface TopbarProps {
+  toggleSidebar?: () => void;
+}
+
+const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
+  // ===== অথ প্রোভাইডার থেকে ডেটা নিচ্ছি =====
   const { user, userData, somityInfo, logout, isSuperAdmin } = useAuth();
+  
+  // ===== লোকাল স্টেট =====
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // ===== ইউজার রোল বের করার ফাংশন =====
   const getUserRole = (): string => {
     try {
       if (isSuperAdmin) return 'super_admin';
@@ -34,6 +48,7 @@ const Topbar: React.FC = () => {
 
   const userRole = getUserRole();
 
+  // ===== রোল অনুযায়ী ব্যাজ স্টাইল =====
   const getRoleBadgeStyle = (role: string) => {
     switch(role) {
       case 'super_admin': return 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-purple-200';
@@ -44,6 +59,7 @@ const Topbar: React.FC = () => {
     }
   };
 
+  // ===== রোল আইকন =====
   const getRoleIcon = (role: string) => {
     switch(role) {
       case 'super_admin': return <Shield className="w-3 h-3 mr-1" />;
@@ -53,6 +69,7 @@ const Topbar: React.FC = () => {
     }
   };
 
+  // ===== রোল টেক্সট (বাংলায়) =====
   const getRoleText = (role: string) => {
     switch(role) {
       case 'super_admin': return 'সুপার অ্যাডমিন';
@@ -62,9 +79,11 @@ const Topbar: React.FC = () => {
     }
   };
 
+  // ===== ড্রপডাউন টগল =====
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
+  // ===== ডামি নোটিফিকেশন ডেটা =====
   const notifications = [
     { id: 1, text: 'New member joined', time: '5 min ago', read: false },
     { id: 2, text: 'Fee collection due today', time: '1 hour ago', read: false },
@@ -72,6 +91,7 @@ const Topbar: React.FC = () => {
   ];
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // ===== বর্তমান তারিখ বাংলায় =====
   const getCurrentDate = () => {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { 
@@ -91,13 +111,23 @@ const Topbar: React.FC = () => {
       className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-lg"
     >
       <div className="flex items-center justify-between px-6 py-3">
-        {/* Left side - Somity Info */}
+        {/* ===== বাম পাশে: সমিতির তথ্য + হ্যামবার্গার ===== */}
         <motion.div 
           className="flex items-center space-x-4"
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
+          {/* ===== হ্যামবার্গার বাটন (শুধু মোবাইলে দেখাবে) ===== */}
+          <button
+            onClick={toggleSidebar}
+            className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-all duration-300"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="w-6 h-6 text-white" />
+          </button>
+
+          {/* ===== সুপার অ্যাডমিন ভিউ ===== */}
           {isSuperAdmin && !somityInfo ? (
             <>
               <div className="relative">
@@ -128,6 +158,7 @@ const Topbar: React.FC = () => {
               </div>
             </>
           ) : somityInfo ? (
+            // ===== সাধারণ ইউজার ভিউ =====
             <>
               <div className="relative">
                 <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
@@ -168,13 +199,14 @@ const Topbar: React.FC = () => {
           ) : null}
         </motion.div>
 
-        {/* Right side - User Menu */}
+        {/* ===== ডান পাশে: ইউজার মেনু ===== */}
         <motion.div 
           className="flex items-center space-x-3"
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
+          {/* ===== ডার্ক মোড টগল ===== */}
           <motion.button 
             whileHover={{ scale: 1.1, rotate: 15 }}
             whileTap={{ scale: 0.9 }}
@@ -190,7 +222,7 @@ const Topbar: React.FC = () => {
             </span>
           </motion.button>
 
-          {/* Notifications */}
+          {/* ===== নোটিফিকেশন ===== */}
           <div className="relative">
             <motion.button 
               whileHover={{ scale: 1.1 }}
@@ -210,6 +242,7 @@ const Topbar: React.FC = () => {
               )}
             </motion.button>
 
+            {/* ===== নোটিফিকেশন ড্রপডাউন ===== */}
             <AnimatePresence>
               {showNotifications && (
                 <motion.div
@@ -248,7 +281,7 @@ const Topbar: React.FC = () => {
             </AnimatePresence>
           </div>
           
-          {/* User Menu */}
+          {/* ===== ইউজার মেনু ===== */}
           <div className="relative">
             <motion.button 
               whileHover={{ scale: 1.02 }}
@@ -275,6 +308,7 @@ const Topbar: React.FC = () => {
               </motion.div>
             </motion.button>
             
+            {/* ===== ড্রপডাউন মেনু ===== */}
             <AnimatePresence>
               {isDropdownOpen && (
                 <motion.div
@@ -345,6 +379,7 @@ const Topbar: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* ===== নিচের ডেকোরেশন লাইন ===== */}
       <motion.div 
         className="h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent"
         initial={{ scaleX: 0 }}

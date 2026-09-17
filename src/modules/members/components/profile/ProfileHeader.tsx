@@ -33,7 +33,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
+    <div className="bg-linear-to-r from-green-600 to-blue-600 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Avatar */}

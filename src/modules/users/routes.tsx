@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
 
-const UsersDashboard = lazy(() => import("./pages/index"));
+const UsersDashboard = lazy(() => import("./pages"));
 const AddUser = lazy(() => import("./pages/AddUser"));
 const CreateMemberAccount = lazy(() => import("./pages/CreateMemberAccount"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));

@@ -1,22 +1,27 @@
 // src/shared/export/ExportMenu.tsx
 
-import React, { useState, useRef } from 'react';
-import { Download, ChevronDown } from 'lucide-react';
-import type { FeeTransaction } from '../../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Download, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react';
 import PDFExport from './PDFExport';
 import ExcelExport from './ExcelExport';
 
 interface ExportMenuProps {
-  data: FeeTransaction[];
+  data: any[];
   title?: string;
   subtitle?: string;
+  filename?: string;
 }
 
-const ExportMenu: React.FC<ExportMenuProps> = ({ data, title = 'Fee Transactions Report', subtitle }) => {
+const ExportMenu: React.FC<ExportMenuProps> = ({ 
+  data, 
+  title = 'Report', 
+  subtitle, 
+  filename = 'report' 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -25,8 +30,6 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ data, title = 'Fee Transactions
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const totalAmount = data.reduce((sum, t) => sum + (t.feeAmount || 0), 0);
 
   if (data.length === 0) {
     return (
@@ -40,11 +43,16 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ data, title = 'Fee Transactions
     );
   }
 
+  const totalAmount = data.reduce((sum, item) => {
+    const amount = item['মোট পরিমাণ'] || item['amount'] || 0;
+    return sum + (typeof amount === 'number' ? amount : 0);
+  }, 0);
+
   return (
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
       >
         <Download className="h-4 w-4" />
         Export
@@ -52,27 +60,24 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ data, title = 'Fee Transactions
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <h3 className="font-bold text-gray-900">Export Reports</h3>
-            <p className="text-sm text-gray-600">{data.length} records • ৳{totalAmount.toLocaleString()}</p>
+            <p className="text-xs text-gray-500">{data.length} records • ৳{totalAmount.toLocaleString()}</p>
           </div>
           
-          <div className="p-2">
+          <div className="p-2 space-y-1">
             <PDFExport 
               data={data} 
-              filename="fee_transactions"
+              filename={filename}
               title={title}
               subtitle={subtitle}
             />
-            
-            <div className="mt-2">
-              <ExcelExport data={data} filename="fee_transactions" />
-            </div>
+            <ExcelExport data={data} filename={filename} />
           </div>
 
-          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 rounded-b-xl text-center text-xs text-gray-500">
-            Al-Amin Somity - Fee Management System
+          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 rounded-b-xl text-center text-xs text-gray-400">
+            Al-Amin Somity
           </div>
         </div>
       )}

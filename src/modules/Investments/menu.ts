@@ -13,17 +13,24 @@ export const investmentMenu = [
         roles: ["admin", "super_admin"],
       },
       {
-        key: "investment_list",
-        label: "Investment List",
-        path: "/investments/list",
-        icon: "list",
-        roles: ["admin", "super_admin"],
-      },
-      {
         key: "investment_create",
         label: "Create Investment",
         path: "/investments/create",
         icon: "plus",
+        roles: ["admin", "super_admin"],
+      },
+      {
+        key: "investment_pending",
+        label: "Pending Approvals",
+        path: "/investments/pending",
+        icon: "clock",
+        roles: ["admin", "super_admin"],
+      },
+      {
+        key: "investment_list",
+        label: "Investment List",
+        path: "/investments/list",
+        icon: "list",
         roles: ["admin", "super_admin"],
       },
       {

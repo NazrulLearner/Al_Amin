@@ -1,148 +1,137 @@
+/* // src/modules/Investments/services/investmentReportService.ts
+
+import { parseToDate } from '../../../utils/formatters/dateFormatter';  // ✅ Use global
 import { investmentService } from './investmentService';
-import type {
-    InvestmentSummary,
-    MemberInvestmentSummary,
-    PlanWiseSummary,
-    MonthlyTrend,
-    InvestmentReportData
-} from '../types/investmentReport.types';
-import { investmentHelpers } from '../utils/investmentHelpers';
+import type { InvestmentReport, InvestmentReportFilters } from '../types/investmentReport.types';
+import { INVESTMENT_TYPE_LABELS } from '../constants/investmentTypes';
+import { calculateReturnRate } from '../utils/investmentCalculator';
 
 export const investmentReportService = {
-  async getSummary(): Promise<InvestmentSummary> {
-    const investments = await investmentService.getAll();
-    const active = investments.filter(i => i.status === 'active');
-    const matured = investments.filter(i => i.status === 'matured');
-    const withdrawn = investments.filter(i => i.status === 'withdrawn');
-    const defaulted = investments.filter(i => i.status === 'defaulted');
-
-    return {
-      totalInvestments: investments.length,
-      totalAmount: investmentHelpers.calculateTotalAmount(investments),
-      totalExpectedProfit: investments.reduce((sum, i) => sum + i.expectedProfitAmount, 0),
-      totalActualProfit: investments.reduce((sum, i) => sum + (i.actualProfitAmount || 0), 0),
-      activeCount: active.length,
-      activeAmount: investmentHelpers.calculateTotalAmount(active),
-      maturedCount: matured.length,
-      maturedAmount: investmentHelpers.calculateTotalAmount(matured),
-      withdrawnCount: withdrawn.length,
-      defaultedCount: defaulted.length
-    };
-  },
-
-  async getMemberWiseSummary(): Promise<MemberInvestmentSummary[]> {
-    const investments = await investmentService.getAll();
-    const grouped = investmentHelpers.groupByMember(investments);
-    const summaries: MemberInvestmentSummary[] = [];
-
-    for (const [memberId, memberInvestments] of grouped) {
-      const activeInvestments = memberInvestments.filter(i => i.status === 'active');
-      summaries.push({
-        memberId,
-        memberName: memberInvestments[0]?.memberName || '',
-        totalInvested: investmentHelpers.calculateTotalAmount(memberInvestments),
-        activeInvestments: activeInvestments.length,
-        totalExpectedProfit: memberInvestments.reduce((sum, i) => sum + i.expectedProfitAmount, 0),
-        totalReceivedProfit: memberInvestments.reduce((sum, i) => sum + (i.actualProfitAmount || 0), 0),
-        upcomingMaturityDate: activeInvestments.length > 0 
-          ? new Date(Math.min(...activeInvestments.map(i => i.maturityDate.getTime())))
-          : undefined
-      });
-    }
-
-    return summaries.sort((a, b) => b.totalInvested - a.totalInvested);
-  },
-
-  async getPlanWiseSummary(): Promise<PlanWiseSummary[]> {
-    const investments = await investmentService.getAll();
-    const grouped = investmentHelpers.groupByPlan(investments);
-    const summaries: PlanWiseSummary[] = [];
-
-    for (const [planId, planInvestments] of grouped) {
-      summaries.push({
-        planId,
-        planName: planInvestments[0]?.planName || '',
-        investorCount: planInvestments.length,
-        totalAmount: investmentHelpers.calculateTotalAmount(planInvestments),
-        expectedProfit: planInvestments.reduce((sum, i) => sum + i.expectedProfitAmount, 0)
-      });
-    }
-
-    return summaries.sort((a, b) => b.totalAmount - a.totalAmount);
-  },
-
-  async getMonthlyTrend(year?: number): Promise<MonthlyTrend[]> {
-    const investments = await investmentService.getAll();
-    const targetYear = year || new Date().getFullYear();
-    const monthlyData = new Map<string, { amount: number; profit: number }>();
-
-    investments.forEach(inv => {
-      const month = inv.startDate.getMonth();
-      const year = inv.startDate.getFullYear();
-      if (year === targetYear) {
-        const key = `${month}-${year}`;
-        const existing = monthlyData.get(key) || { amount: 0, profit: 0 };
-        monthlyData.set(key, {
-          amount: existing.amount + inv.amount,
-          profit: existing.profit + inv.expectedProfitAmount
-        });
+  async generateReport(filters: InvestmentReportFilters): Promise<InvestmentReport> {
+    const investments = await investmentService.getAllInvestments(10000);
+    
+    const filteredInvestments = investments.filter(inv => {
+      const invDate = parseToDate(inv.startDate);
+      return invDate && invDate >= filters.startDate && invDate <= filters.endDate;
+    });
+    
+    let totalAmount = 0;
+    let activeCount = 0;
+    let maturedCount = 0;
+    let totalProfitEarned = 0;
+    let totalProfitExpected = 0;
+    const byType: Record<string, { count: number; amount: number; profit: number }> = {};
+    const byInvestor: Record<string, { investorId: string; investorName: string; count: number; amount: number; profit: number }> = {};
+    const monthlyData: Record<string, { investment: number; profit: number }> = {};
+    
+    filteredInvestments.forEach(inv => {
+      totalAmount += inv.amount;
+      totalProfitExpected += inv.expectedProfit;
+      totalProfitEarned += inv.actualProfitReceived || 0;
+      
+      if (inv.status === 'active') activeCount++;
+      if (inv.status === 'matured') maturedCount++;
+      
+      if (!byType[inv.type]) {
+        byType[inv.type] = { count: 0, amount: 0, profit: 0 };
+      }
+      byType[inv.type].count++;
+      byType[inv.type].amount += inv.amount;
+      byType[inv.type].profit += inv.actualProfitReceived || 0;
+      
+      if (!byInvestor[inv.investorId]) {
+        byInvestor[inv.investorId] = {
+          investorId: inv.investorId,
+          investorName: inv.investorName,
+          count: 0,
+          amount: 0,
+          profit: 0
+        };
+      }
+      byInvestor[inv.investorId].count++;
+      byInvestor[inv.investorId].amount += inv.amount;
+      byInvestor[inv.investorId].profit += inv.actualProfitReceived || 0;
+      
+      const startDate = parseToDate(inv.startDate);
+      if (startDate) {
+        const monthKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { investment: 0, profit: 0 };
+        }
+        monthlyData[monthKey].investment += inv.amount;
       }
     });
-
-    const trends: MonthlyTrend[] = [];
-    for (let i = 0; i < 12; i++) {
-      const key = `${i}-${targetYear}`;
-      const data = monthlyData.get(key) || { amount: 0, profit: 0 };
-      trends.push({
-        month: new Date(targetYear, i, 1).toLocaleString('default', { month: 'long' }),
-        year: targetYear,
-        amount: data.amount,
-        profit: data.profit
-      });
-    }
-
-    return trends;
-  },
-
-  async getFullReport(startDate: Date, endDate: Date): Promise<InvestmentReportData> {
-    const [summary, memberWise, planWise, monthlyTrend] = await Promise.all([
-      this.getSummary(),
-      this.getMemberWiseSummary(),
-      this.getPlanWiseSummary(),
-      this.getMonthlyTrend()
-    ]);
-
+    
+    const averageReturnRate = totalAmount > 0 ? (totalProfitEarned / totalAmount) * 100 : 0;
+    
     return {
-      periodStart: startDate,
-      periodEnd: endDate,
-      summary,
-      memberWise,
-      planWise,
-      monthlyTrend
+      periodStart: filters.startDate,
+      periodEnd: filters.endDate,
+      summary: {
+        totalInvestments: filteredInvestments.length,
+        totalAmount,
+        activeInvestments: activeCount,
+        maturedInvestments: maturedCount,
+        totalProfitEarned,
+        totalProfitExpected,
+        averageReturnRate,
+      },
+      byType: Object.entries(byType).map(([type, data]) => ({
+        type,
+        typeLabel: INVESTMENT_TYPE_LABELS[type] || type,
+        count: data.count,
+        amount: data.amount,
+        profit: data.profit,
+        returnRate: calculateReturnRate(data.amount, data.profit),
+      })),
+      byInvestor: Object.values(byInvestor).map(inv => ({
+        ...inv,
+        returnRate: calculateReturnRate(inv.amount, inv.profit),
+      })),
+      monthlyData: Object.entries(monthlyData).map(([month, data]) => {
+        const [year, monthNum] = month.split('-');
+        return {
+          month: getMonthName(parseInt(monthNum)),
+          year: parseInt(year),
+          investment: data.investment,
+          profit: data.profit,
+        };
+      }),
     };
   },
-
-  async exportToCSV(data: any[], filename: string): Promise<void> {
-    if (!data || data.length === 0) return;
+  
+  async exportToCSV(filters: InvestmentReportFilters): Promise<string> {
+    const investments = await investmentService.getAllInvestments(10000);
     
-    const headers = Object.keys(data[0]);
-    const csvRows = [];
-    csvRows.push(headers.join(','));
+    const headers = ['Investment ID', 'Investor', 'Type', 'Amount', 'Interest Rate', 'Status', 'Profit Expected', 'Profit Received', 'Return Rate'];
+    const rows = [];
     
-    for (const row of data) {
-      const values = headers.map(header => {
-        const value = row[header];
-        return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
-      });
-      csvRows.push(values.join(','));
+    const filteredInvestments = investments.filter(inv => {
+      const invDate = parseToDate(inv.startDate);
+      return invDate && invDate >= filters.startDate && invDate <= filters.endDate;
+    });
+    
+    for (const inv of filteredInvestments) {
+      rows.push([
+        inv.investmentId,
+        inv.investorName,
+        INVESTMENT_TYPE_LABELS[inv.type] || inv.type,
+        inv.amount.toString(),
+        `${inv.interestRate}%`,
+        inv.status,
+        inv.expectedProfit.toString(),
+        (inv.actualProfitReceived || 0).toString(),
+        `${calculateReturnRate(inv.amount, inv.actualProfitReceived || 0).toFixed(2)}%`
+      ]);
     }
     
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    return csvContent;
   }
 };
+
+const getMonthName = (month: number): string => {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return months[month - 1];
+};
+export default investmentReportService; */

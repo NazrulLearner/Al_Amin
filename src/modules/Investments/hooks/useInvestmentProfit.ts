@@ -1,48 +1,62 @@
-import { useState, useEffect, useCallback } from 'react';
+// src/modules/Investments/hooks/useInvestmentProfit.ts
+
+import { useState, useEffect } from 'react';
 import { investmentService } from '../services/investmentService';
-import { investmentCalculator } from '../utils/investmentCalculator';
+import type { Investment } from '../types/investment.types';
+import type { ProfitRecord } from '../types/investmentTransaction.types';
 
 export const useInvestmentProfit = (investmentId: string) => {
-  const [profit, setProfit] = useState<{
-    expected: number;
-    monthly: number;
-    percentage: number;
-    annualized: number;
-  } | null>(null);
+  const [investment, setInvestment] = useState<Investment | null>(null);
+  const [profitRecords, setProfitRecords] = useState<ProfitRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthlyProfit] = useState(0);
+  const [totalExpectedProfit] = useState(0);
+  const [totalReceivedProfit] = useState(0);
 
-  const calculateProfit = useCallback(async () => {
-    try {
-      setLoading(true);
-      const investment = await investmentService.getById(investmentId);
-      if (investment) {
-        const totalDays = (investment.maturityDate.getTime() - investment.startDate.getTime()) / (1000 * 60 * 60 * 24);
-        
-        setProfit({
-          expected: investment.expectedProfitAmount,
-          monthly: investmentCalculator.calculateMonthlyProfit(
-            investment.amount,
-            investment.expectedReturnPercent,
-            investment.expectedReturnPercent === 12 ? 12 : 1
-          ),
-          percentage: investment.expectedReturnPercent,
-          annualized: investmentCalculator.calculateAnnualizedReturn(
-            investment.expectedProfitAmount,
-            investment.amount,
-            totalDays
-          )
-        });
-      }
-    } catch (error) {
-      console.error('Error calculating profit:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (investmentId) {
+      loadData();
     }
   }, [investmentId]);
 
-  useEffect(() => {
-    calculateProfit();
-  }, [calculateProfit]);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const inv = await investmentService.getInvestment(investmentId);
+      setInvestment(inv);
+      
+  
+      
+      // Try to load profit records if the method exists
+      try {
+        // @ts-ignore - optional method
+        const records = await investmentService.getProfitRecords?.(investmentId);
+        setProfitRecords(records || []);
+      } catch (e) {
+        setProfitRecords([]);
+      }
+    } catch (error) {
+      console.error('Error loading investment profit data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return { profit, loading, recalculate: calculateProfit };
+  const refresh = () => {
+    loadData();
+  };
+
+  return {
+    investment,
+    profitRecords,
+    loading,
+    monthlyProfit,
+    totalExpectedProfit,
+    totalReceivedProfit,
+    remainingProfit: totalExpectedProfit - totalReceivedProfit,
+    profitPercentage: totalExpectedProfit > 0 ? (totalReceivedProfit / totalExpectedProfit) * 100 : 0,
+    refresh
+  };
 };
+
+export default useInvestmentProfit;

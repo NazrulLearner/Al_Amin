@@ -8,6 +8,7 @@ export const investmentPermissions = {
   
   // View Permissions
   VIEW_INVESTMENT_DASHBOARD: 'view_investment_dashboard',
+  VIEW_INVESTMENT_PENDING: 'view_investment_pending',
   VIEW_INVESTMENT_DETAILS: 'view_investment_details',
   VIEW_INVESTMENT_HISTORY: 'view_investment_history',
   VIEW_INVESTMENT_REPORTS: 'view_investment_reports',
@@ -29,6 +30,7 @@ export const rolePermissions = {
     investmentPermissions.DELETE_INVESTMENT,
     investmentPermissions.APPROVE_INVESTMENT,
     investmentPermissions.VIEW_INVESTMENT_DASHBOARD,
+    investmentPermissions.VIEW_INVESTMENT_PENDING,
     investmentPermissions.VIEW_INVESTMENT_DETAILS,
     investmentPermissions.VIEW_INVESTMENT_HISTORY,
     investmentPermissions.VIEW_INVESTMENT_REPORTS,
@@ -42,6 +44,7 @@ export const rolePermissions = {
     investmentPermissions.CREATE_INVESTMENT,
     investmentPermissions.EDIT_INVESTMENT,
     investmentPermissions.VIEW_INVESTMENT_DASHBOARD,
+    investmentPermissions.VIEW_INVESTMENT_PENDING,
     investmentPermissions.VIEW_INVESTMENT_DETAILS,
     investmentPermissions.VIEW_INVESTMENT_HISTORY,
     investmentPermissions.VIEW_INVESTMENT_REPORTS,

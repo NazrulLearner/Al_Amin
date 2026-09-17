@@ -6,6 +6,7 @@ export interface Member {
   id: string;
   memberId: string;
   uid: string | null;
+  role: UserRole;
   
   // Personal Information
   firstName: string;

@@ -144,10 +144,10 @@ export const createMember = async (
     const memberUid = params.id || params.uid || null;
     
     const member: Member = {
-      personal: params.personal || {},
       id: memberUid || '',
       memberId: params.memberId,
       uid: memberUid,
+      role: params.membership.role || 'member',
 
       // Personal Information
       firstName: params.firstName || '',
@@ -236,6 +236,7 @@ export const createMember = async (
         deletedAt: null,
         deletedBy: null,
       },
+      personal: undefined
     };
     
     // Save to Firestore

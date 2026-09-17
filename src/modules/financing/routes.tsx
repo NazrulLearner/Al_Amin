@@ -1,3 +1,4 @@
+// src/modules/financing/routes.tsx
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 

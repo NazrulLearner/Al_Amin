@@ -1,49 +1,55 @@
-export const investmentCalculator = {
-  calculateProfit(amount: number, profitPercent: number): number {
-    return (amount * profitPercent) / 100;
-  },
+// src/modules/Investments/utils/investmentCalculator.ts
 
-  calculateTotalReturn(amount: number, profitPercent: number): number {
-    return amount + this.calculateProfit(amount, profitPercent);
-  },
+import type { ProfitCalculationType } from '../types/investment.types';
 
-  calculateMonthlyProfit(amount: number, profitPercent: number, months: number): number {
-    const totalProfit = this.calculateProfit(amount, profitPercent);
-    return totalProfit / months;
-  },
-
-  calculateMaturityDate(startDate: Date, durationMonths: number): Date {
-    const date = new Date(startDate);
-    date.setMonth(date.getMonth() + durationMonths);
-    return date;
-  },
-
-  calculateRemainingDays(maturityDate: Date): number {
-    const today = new Date();
-    const diffTime = maturityDate.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  },
-
-  calculateProgressPercentage(startDate: Date, maturityDate: Date): number {
-    const total = maturityDate.getTime() - startDate.getTime();
-    const elapsed = new Date().getTime() - startDate.getTime();
-    if (total <= 0) return 100;
-    const percentage = (elapsed / total) * 100;
-    return Math.min(Math.max(percentage, 0), 100);
-  },
-
-  getInvestmentStatus(maturityDate: Date): 'active' | 'matured' {
-    const remainingDays = this.calculateRemainingDays(maturityDate);
-    return remainingDays <= 0 ? 'matured' : 'active';
-  },
-
-  calculateROI(amount: number, profit: number): number {
-    if (amount === 0) return 0;
-    return (profit / amount) * 100;
-  },
-
-  calculateAnnualizedReturn(profit: number, amount: number, days: number): number {
-    if (amount === 0 || days === 0) return 0;
-    return (profit / amount) * (365 / days) * 100;
+export const calculateExpectedProfit = (
+  amount: number,
+  profitRate: number,
+  durationMonths: number,
+  calculationType?: ProfitCalculationType,
+  fixedAmount?: number
+): number => {
+  if (calculationType === 'fixed_amount' && fixedAmount) {
+    return fixedAmount;
   }
+  if (calculationType === 'revenue_share' && profitRate) {
+    return (amount * profitRate) / 100;
+  }
+  // percentage based (default)
+  return (amount * profitRate * durationMonths) / (12 * 100);
+};
+
+export const calculateMonthlyProfit = (amount: number, profitRate: number): number => {
+  return (amount * profitRate) / (12 * 100);
+};
+
+export const calculateTotalReturn = (principal: number, profit: number): number => {
+  return principal + profit;
+};
+
+export const calculateMaturityDate = (startDate: Date, durationMonths: number): Date => {
+  const maturityDate = new Date(startDate);
+  maturityDate.setMonth(maturityDate.getMonth() + durationMonths);
+  return maturityDate;
+};
+
+export const getMonthsDifference = (startDate: Date, endDate: Date): number => {
+  const years = endDate.getFullYear() - startDate.getFullYear();
+  const months = endDate.getMonth() - startDate.getMonth();
+  return years * 12 + months;
+};
+
+export const getDaysToMaturity = (maturityDate: Date): number => {
+  const today = new Date();
+  const diffTime = maturityDate.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+export const formatInvestmentId = (count: number): string => {
+  return `INV_${String(count).padStart(4, '0')}`;
+};
+
+export const calculateReturnRate = (amount: number, profit: number): number => {
+  if (amount === 0) return 0;
+  return (profit / amount) * 100;
 };

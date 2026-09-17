@@ -1,3 +1,4 @@
+// src/modules/business/menu.ts
 export const businessMenu = [
   {
     key: "business",

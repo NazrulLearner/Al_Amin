@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
 const DashboardRedirect: React.FC = () => {
-  const { user, loading, isSuperAdmin } = useAuth();
+  const { user, loading, isSuperAdmin, userData } = useAuth();
 
   if (loading) {
     return (
@@ -13,18 +13,16 @@ const DashboardRedirect: React.FC = () => {
     );
   }
 
-  // Not logged in - go to welcome
   if (!user) {
     return <Navigate to="/welcome" replace />;
   }
 
-  // Super admin
   if (isSuperAdmin) {
     return <Navigate to="/super-admin" replace />;
   }
 
-  // Role-based redirect
-  switch (user.role) {
+  const role = userData?.role;
+  switch (role) {
     case 'admin':
       return <Navigate to="/admin-dashboard" replace />;
     case 'cashier':

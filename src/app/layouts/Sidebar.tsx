@@ -1,3 +1,6 @@
+// src/app/layouts/Sidebar.tsx
+// অ্যাপের বাম পাশের নেভিগেশন মেনু
+
 import { cloneElement, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -27,11 +30,13 @@ import { useAuth } from "../providers/AuthProvider";
 import { menuConfig } from "../../navigation/menuConfig";
 import type { UserRole } from "../../types";
 
+// ===== প্রপস টাইপ =====
 interface SidebarProps {
-  isOpen?: boolean;
-  toggleSidebar?: () => void;
+  isOpen?: boolean;        // সাইডবার খোলা থাকবে কিনা (প্যারেন্ট থেকে)
+  toggleSidebar?: () => void; // সাইডবার বন্ধ করার ফাংশন (মোবাইলে)
 }
 
+// ===== মেনু আইটেম টাইপ =====
 interface MenuItemType {
   key?: string;
   name?: string;
@@ -42,6 +47,7 @@ interface MenuItemType {
   children?: MenuItemType[];
 }
 
+// ===== আইকন কম্পোনেন্ট =====
 const getIconComponent = (iconName: string, size = 20) => {
   const icons: Record<string, React.ReactElement> = {
     activity: <TrendingUp size={size} />,
@@ -77,6 +83,7 @@ const getIconComponent = (iconName: string, size = 20) => {
   return icons[iconName] || <Home size={20} />;
 };
 
+// ===== মেনু টোন (রং) =====
 const getMenuTone = (item: MenuItemType): string => {
   const value = `${item.key || ""} ${item.name || ""} ${item.label || ""} ${item.icon || ""}`.toLowerCase();
   if (value.includes("member") || value.includes("user")) return "text-cyan-300";
@@ -93,6 +100,7 @@ const getMenuTone = (item: MenuItemType): string => {
   return "text-emerald-300";
 };
 
+// ===== আইকনে ক্লাস যোগ করা =====
 const withIconClass = (icon: React.ReactElement<{ className?: string }>, className: string) => {
   const currentClass = icon.props.className || "";
   return cloneElement(icon, {
@@ -100,6 +108,7 @@ const withIconClass = (icon: React.ReactElement<{ className?: string }>, classNa
   });
 };
 
+// ===== ড্যাশবোর্ড পাথ =====
 const getDashboardPath = (role: string | null, isSuperAdmin: boolean): string => {
   if (isSuperAdmin) return "/super-admin";
   switch (role) {
@@ -122,23 +131,29 @@ const getDashboardLabel = (role: string | null, isSuperAdmin: boolean): string =
   }
 };
 
-export default function Sidebar({}: SidebarProps) {
-  const [open, setOpen] = useState(() => {
-    const saved = localStorage.getItem("sidebar-open");
-    return saved ? JSON.parse(saved) : true;
-  });
+// ===== মেইন কম্পোনেন্ট =====
+export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) {
+  // ===== স্টেট =====
   const [expanded, setExpanded] = useState<string | null>(null);
   const location = useLocation();
   const { userData, currentMember, logout, isSuperAdmin, user } = useAuth();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
+  // ===== উইন্ডো রিসাইজ হ্যান্ডলার =====
   useEffect(() => {
-    localStorage.setItem("sidebar-open", JSON.stringify(open));
-  }, [open]);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
+  // ===== ইউজার রোল =====
   const currentUserRole = user?.role || (isSuperAdmin ? "super_admin" : null);
   const dashboardPath = getDashboardPath(currentUserRole, isSuperAdmin);
   const dashboardLabel = getDashboardLabel(currentUserRole, isSuperAdmin);
 
+  // ===== মেনু ফিল্টার (রোল অনুযায়ী) =====
   const menuItems = useMemo(() => {
     const filterMenuByRole = (items: MenuItemType[]): MenuItemType[] => {
       if (!currentUserRole) return [];
@@ -157,6 +172,7 @@ export default function Sidebar({}: SidebarProps) {
     return filterMenuByRole(menuConfig as MenuItemType[]);
   }, [currentUserRole, isSuperAdmin]);
 
+  // ===== অ্যাক্টিভ মেনু এক্সপ্যান্ড =====
   useEffect(() => {
     const activeParent = menuItems.find((item) =>
       item.children?.some((child) => child.path && location.pathname.startsWith(child.path))
@@ -166,10 +182,12 @@ export default function Sidebar({}: SidebarProps) {
     }
   }, [location.pathname, menuItems]);
 
+  // ===== এক্সপ্যান্ড টগল =====
   const toggleExpand = (key: string) => {
     setExpanded((current) => (current === key ? null : key));
   };
 
+  // ===== লগআউট =====
   const handleLogout = async () => {
     try {
       await logout();
@@ -178,6 +196,7 @@ export default function Sidebar({}: SidebarProps) {
     }
   };
 
+  // ===== হেল্পার ফাংশন =====
   const getMenuItemName = (item: MenuItemType): string => item.label || item.name || "";
   const getMenuItemIcon = (item: MenuItemType): React.ReactElement => {
     if (typeof item.icon === "string") return getIconComponent(item.icon);
@@ -191,6 +210,7 @@ export default function Sidebar({}: SidebarProps) {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
+  // ===== লোডিং স্টেট =====
   if (!currentUserRole || !userData) {
     return (
       <aside className="flex h-screen w-16 shrink-0 items-center justify-center bg-[#1E3A3A] text-white">
@@ -204,14 +224,21 @@ export default function Sidebar({}: SidebarProps) {
   return (
     <motion.aside
       layout
-      animate={{ width: open ? 240 : 72 }}
+      animate={{ 
+        width: isOpen ? 240 : (isMobile ? 0 : 72) 
+      }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="relative flex h-screen shrink-0 flex-col overflow-hidden bg-gradient-to-b from-[#1E3A3A] to-[#0F2A2A] text-left text-white shadow-xl"
+      className={`
+        relative flex h-screen flex-col overflow-hidden 
+        bg-gradient-to-b from-[#1E3A3A] to-[#0F2A2A] text-white shadow-xl
+        ${isMobile && !isOpen ? 'w-0' : ''}
+        lg:flex
+      `}
     >
-      {/* Header with profile & toggle */}
-      <div className={`flex items-center px-3 py-4 ${open ? "justify-between" : "justify-center"}`}>
+      {/* ===== হেডার ===== */}
+      <div className={`flex items-center px-3 py-4 ${isOpen ? "justify-between" : "justify-center"}`}>
         <AnimatePresence mode="wait">
-          {open ? (
+          {isOpen ? (
             <motion.div
               key="open-profile"
               initial={{ opacity: 0, x: -8 }}
@@ -241,9 +268,17 @@ export default function Sidebar({}: SidebarProps) {
           )}
         </AnimatePresence>
 
+        {/* ===== টগল বাটন ===== */}
         <button
           type="button"
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            if (toggleSidebar) {
+              toggleSidebar(); // মোবাইলে প্যারেন্টের ফাংশন কল
+            } else {
+              // ডেস্কটপে লোকাল স্টেট টগল (ব্যাকওয়ার্ড কম্প্যাটিবিলিটি)
+              // এইখানে তোমার ইচ্ছামতো করতে পারো
+            }
+          }}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
           aria-label="Toggle sidebar"
         >
@@ -251,7 +286,7 @@ export default function Sidebar({}: SidebarProps) {
         </button>
       </div>
 
-      {/* Dashboard Link */}
+      {/* ===== ড্যাশবোর্ড লিংক ===== */}
       <div className="px-3 pb-2 pt-1">
         <Link
           to={dashboardPath}
@@ -260,14 +295,14 @@ export default function Sidebar({}: SidebarProps) {
           }`}
         >
           <LayoutDashboard size={20} className={`shrink-0 ${isActive(dashboardPath) ? "text-white" : "text-emerald-300"}`} />
-          {open && <span className="truncate text-[14px] font-semibold">{dashboardLabel}</span>}
+          {isOpen && <span className="truncate text-[14px] font-semibold">{dashboardLabel}</span>}
         </Link>
       </div>
 
       <div className="mx-3 h-px bg-white/10" />
 
-      {/* Navigation Menu - Scrollbar only visible when open */}
-      <nav className={`min-h-0 flex-1 overflow-y-auto px-2 py-3 ${!open ? 'scrollbar-hide' : ''}`}>
+      {/* ===== নেভিগেশন মেনু ===== */}
+      <nav className={`min-h-0 flex-1 overflow-y-auto px-2 py-3 ${!isOpen ? 'scrollbar-hide' : ''}`}>
         <div className="space-y-1">
           {menuItems.map((item) => {
             const itemKey = item.key || getMenuItemName(item);
@@ -286,15 +321,15 @@ export default function Sidebar({}: SidebarProps) {
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 transition-all duration-200 ${
                       itemExpanded ? "bg-white/10 text-white" : "text-gray-300 hover:bg-white/10"
                     }`}
-                    title={!open ? itemName : undefined}
+                    title={!isOpen ? itemName : undefined}
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-3">
                       <span className={`shrink-0 ${getMenuTone(item)}`}>
                         {withIconClass(getMenuItemIcon(item), "shrink-0")}
                       </span>
-                      {open && <span className="truncate text-[14px] font-semibold">{itemName}</span>}
+                      {isOpen && <span className="truncate text-[14px] font-semibold">{itemName}</span>}
                     </span>
-                    {open && (
+                    {isOpen && (
                       <span className="ml-1 shrink-0 text-gray-300">
                         {itemExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </span>
@@ -302,7 +337,7 @@ export default function Sidebar({}: SidebarProps) {
                   </motion.button>
 
                   <AnimatePresence initial={false}>
-                    {itemExpanded && open && (
+                    {itemExpanded && isOpen && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -352,12 +387,12 @@ export default function Sidebar({}: SidebarProps) {
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 ${
                       isActive(item.path || "") ? "bg-emerald-600 text-white shadow-lg" : "text-gray-300 hover:bg-white/10"
                     }`}
-                    title={!open ? itemName : undefined}
+                    title={!isOpen ? itemName : undefined}
                   >
                     <span className={`shrink-0 ${isActive(item.path || "") ? "text-white" : getMenuTone(item)}`}>
                       {withIconClass(getMenuItemIcon(item), "shrink-0")}
                     </span>
-                    {open && <span className="truncate text-[14px] font-semibold">{itemName}</span>}
+                    {isOpen && <span className="truncate text-[14px] font-semibold">{itemName}</span>}
                   </Link>
                 </motion.div>
               </div>
@@ -366,7 +401,7 @@ export default function Sidebar({}: SidebarProps) {
         </div>
       </nav>
 
-      {/* Footer */}
+      {/* ===== ফুটার (লগআউট) ===== */}
       <div className="mt-auto border-t border-white/10 bg-[#0F2A2A]/40 px-3 pb-3 pt-2">
         <div className="space-y-1">
           <motion.div whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
@@ -377,7 +412,7 @@ export default function Sidebar({}: SidebarProps) {
               }`}
             >
               <User size={18} className="shrink-0" />
-              {open && <span className="truncate text-[14px] font-semibold">My Profile</span>}
+              {isOpen && <span className="truncate text-[14px] font-semibold">My Profile</span>}
             </Link>
           </motion.div>
 
@@ -389,7 +424,7 @@ export default function Sidebar({}: SidebarProps) {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-red-300 transition-all duration-200 hover:bg-red-600/20 hover:text-red-200"
           >
             <LogOut size={18} className="shrink-0" />
-            {open && <span className="truncate text-[14px] font-semibold">Logout</span>}
+            {isOpen && <span className="truncate text-[14px] font-semibold">Logout</span>}
           </motion.button>
         </div>
       </div>
