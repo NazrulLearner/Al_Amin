@@ -45,6 +45,10 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
     switch (role) {
       case 'admin': return 'bg-purple-100 text-purple-700 border border-purple-200';
       case 'cashier': return 'bg-blue-100 text-blue-700 border border-blue-200';
+      case 'manager': return 'bg-amber-100 text-amber-700 border border-amber-200';
+      case 'accountant': return 'bg-indigo-100 text-indigo-700 border border-indigo-200';
+      case 'collector': return 'bg-teal-100 text-teal-700 border border-teal-200';
+      case 'super_admin': return 'bg-purple-200 text-purple-800 border border-purple-300';
       default: return 'bg-green-100 text-green-700 border border-green-200';
     }
   };
@@ -53,6 +57,8 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
     switch (role) {
       case 'admin': return <Shield size={12} className="mr-1" />;
       case 'cashier': return <DollarSign size={12} className="mr-1" />;
+      case 'accountant': return <DollarSign size={12} className="mr-1" />;
+      case 'super_admin': return <Shield size={12} className="mr-1" />;
       default: return <User size={12} className="mr-1" />;
     }
   };

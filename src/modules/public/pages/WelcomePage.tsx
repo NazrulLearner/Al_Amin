@@ -42,7 +42,7 @@ export default function Landing() {
               Member Login
             </Link>
             <Link
-              to="/CreateAdmin"
+              to="/create-admin"
               className="bg-gradient-to-br from-green-600 to-green-700 text-white px-5 py-2 rounded-lg font-semibold shadow hover:scale-[1.02] transition"
             >
               Join Now

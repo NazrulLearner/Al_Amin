@@ -1,121 +1,101 @@
-// src/modules/Investments/constants/investmentConstants.ts
+// ==========================================
+// Investment Constants
+// ==========================================
 
 export const CATEGORIES = [
-  { value: 'fixed_deposit', label: 'স্থায়ী আমানত (FDR)' },
-  { value: 'business', label: 'ব্যবসায়িক বিনিয়োগ' },
-  { value: 'real_estate', label: 'রিয়েল এস্টেট' },
-  { value: 'agriculture', label: 'কৃষি প্রকল্প' },
-  { value: 'stock_market', label: 'শেয়ার বাজার' },
-  { value: 'project', label: 'নির্দিষ্ট প্রকল্প' },
-  { value: 'savings', label: 'সেভিংস' },
-  { value: 'other', label: 'অন্যান্য' },
+  'FDR', 'Agriculture', 'Real Estate', 'External Business',
+  'Project', 'Equity', 'Partnership', 'Other',
 ];
 
-// Risk Levels with better descriptions
-export const RISK_LEVELS = [
-  { 
-    value: 'very_low', 
-    label: 'অত্যন্ত কম ঝুঁকি', 
-    description: 'ব্যাংক FDR, সরকারি বন্ড — প্রায় নিশ্চিত লাভ',
-    color: 'green'
-  },
-  { 
-    value: 'low', 
-    label: 'কম ঝুঁকি', 
-    description: 'স্বনামধন্য প্রতিষ্ঠানে বিনিয়োগ — লাভের সম্ভাবনা উচ্চ',
-    color: 'emerald'
-  },
-  { 
-    value: 'medium', 
-    label: 'মাঝারি ঝুঁকি', 
-    description: 'সাধারণ ব্যবসায়িক বিনিয়োগ — লাভের সম্ভাবনা মাঝারি',
-    color: 'yellow'
-  },
-  { 
-    value: 'high', 
-    label: 'বেশি ঝুঁকি', 
-    description: 'নতুন ব্যবসা বা উদ্যোগ — লাভ বেশি কিন্তু অনিশ্চিত',
-    color: 'orange'
-  },
-  { 
-    value: 'very_high', 
-    label: 'অত্যন্ত বেশি ঝুঁকি', 
-    description: 'অত্যন্ত ঝুঁকিপূর্ণ বিনিয়োগ — সতর্কতা প্রয়োজন',
-    color: 'red'
-  },
+export const STATUSES = [
+  'Draft', 'Pending Review', 'Approved', 'Funding', 'Active',
+  'Return Received', 'Matured', 'Settlement', 'Closed',
+  'Rejected', 'Withdrawn', 'Cancelled',
 ];
 
-export const STATUS_LABELS = {
-  pending: 'অপেক্ষমাণ',
-  active: 'সক্রিয়',
-  matured: 'পরিপক্ক',
-  rejected: 'বাতিল',
-  withdrawn: 'প্রত্যাহারকৃত',
+export const STRUCTURES = [
+  'Somity Only', 'Somity as Lead Investor', 'Somity as Co-Investor',
+  'External Lead Investor + Somity', 'Multiple Co-Investors',
+  'Joint Investment', 'Other',
+];
+
+export const ROLES = ['Lead Investor', 'Co-Investor', 'Sole Investor', 'Participant'];
+export const RISK_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
+export const RETURN_MODELS = [
+  'Fixed Return', 'Percentage Return', 'Profit Sharing',
+  'Revenue Sharing', 'Equity/Ownership', 'Custom Agreement',
+];
+
+export const PARTICIPANT_TYPES = [
+  'Somity', 'Lead Investor', 'Co-Investor', 'Individual Investor',
+  'Organization', 'Partner', 'Other',
+];
+
+export const PAYMENT_METHODS = ['Bank Transfer', 'Cash', 'Cheque', 'Mobile Banking', 'Other'];
+export const RETURN_TYPES = ['Profit', 'Principal', 'Profit + Principal', 'Partial Return'];
+export const DOC_TYPES = [
+  'Investment Proposal', 'Agreement', 'Contract', 'FDR Certificate',
+  'Investor Agreement', 'Payment Proof', 'Return Proof',
+  'Security/Collateral Document', 'Other',
+];
+
+export const HISTORY_EVENTS = [
+  'Created', 'Updated', 'Submitted', 'Approved', 'Rejected',
+  'Funding Recorded', 'Return Recorded', 'Maturity', 'Settlement',
+  'Closed', 'Revision Requested', 'Withdrawn', 'Cancelled',
+];
+
+export const PARTICIPANT_COLORS = [
+  '#065F46', '#4F46E5', '#D97706', '#0D9488',
+  '#9333EA', '#DC2626', '#0891B2', '#CA8A04',
+];
+
+export const CATEGORY_COLORS: Record<string, string> = {
+  'FDR': '#065F46',
+  'Agriculture': '#0D9488',
+  'Real Estate': '#D97706',
+  'External Business': '#4F46E5',
+  'Project': '#0891B2',
+  'Equity': '#9333EA',
+  'Partnership': '#DC2626',
+  'Other': '#64748B',
 };
 
-export const PROFIT_FREQUENCIES = [
-  { value: 'monthly', label: 'মাসিক' },
-  { value: 'quarterly', label: 'ত্রৈমাসিক' },
-  { value: 'half_yearly', label: 'অর্ধ-বার্ষিক' },
-  { value: 'yearly', label: 'বার্ষিক' },
-  { value: 'on_maturity', label: 'মেয়াদান্তে' },
-];
-
-export const BANKS = [
-  'ডাকা ব্যাংক',
-  'ইসলামী ব্যাংক',
-  'মার্কেন্টাইল ব্যাংক',
-  'ফার্স্ট সিকিউরিটি ব্যাংক',
-  'অন্যান্য',
-];
-
-export const ACCOUNT_TYPES = [
-  { value: 'savings', label: 'সঞ্চয়ী হিসাব' },
-  { value: 'current', label: 'চলতি হিসাব' },
-  { value: 'fdr', label: 'FDR হিসাব' },
-  { value: 'dps', label: 'DPS হিসাব' },
-  { value: 'other', label: 'অন্যান্য' },
-];
-
-export const COLLATERAL_TYPES = [
-  { value: 'none', label: 'কোনো জামানত নেই' },
-  { value: 'land', label: 'জমি/সম্পত্তি' },
-  { value: 'gold', label: 'সোনা/অলংকার' },
-  { value: 'document', label: 'দলিলপত্র' },
-  { value: 'personal_guarantee', label: 'ব্যক্তিগত জামানত' },
-  { value: 'other', label: 'অন্যান্য' },
-];
-
-export const MANAGEMENT_TYPE_LABELS = {
-  somity_direct: 'সমিতি সরাসরি পরিচালনা করবে',
-  member_committee: 'সদস্য কমিটির মাধ্যমে',
+export const STATUS_STYLES: Record<string, string> = {
+  'Draft': 'bg-slate-100 text-slate-600 border-slate-200',
+  'Pending Review': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Funding': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Active': 'bg-emerald-600 text-white border-emerald-700',
+  'Return Received': 'bg-teal-50 text-teal-700 border-teal-200',
+  'Matured': 'bg-violet-50 text-violet-700 border-violet-200',
+  'Settlement': 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  'Closed': 'bg-slate-200 text-slate-600 border-slate-300',
+  'Rejected': 'bg-red-50 text-red-700 border-red-200',
+  'Withdrawn': 'bg-slate-100 text-slate-500 border-slate-200',
+  'Cancelled': 'bg-red-50 text-red-600 border-red-200',
 };
 
-// 🆕 Payment methods for co-investors
-export const PAYMENT_METHODS = [
-  { value: 'cash', label: 'নগদ (ক্যাশ)', icon: '💵', description: 'সরাসরি নগদ অর্থ প্রদান' },
-  { value: 'bank', label: 'ব্যাংক ট্রান্সফার', icon: '🏦', description: 'ব্যাংকের মাধ্যমে ট্রান্সফার' },
-  { value: 'bkash', label: 'বিকাশ', icon: '📱', description: 'বিকাশ মোবাইল ব্যাংকিং' },
-  { value: 'nagad', label: 'নগদ', icon: '📱', description: 'নগদ মোবাইল ব্যাংকিং' },
-  { value: 'rocket', label: 'রকেট', icon: '🚀', description: 'রকেট মোবাইল ব্যাংকিং' },
-];
-
-// 🆕 Investment status colors (for UI)
-export const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  active: 'bg-green-100 text-green-800 border-green-200',
-  matured: 'bg-blue-100 text-blue-800 border-blue-200',
-  rejected: 'bg-red-100 text-red-800 border-red-200',
-  withdrawn: 'bg-gray-100 text-gray-800 border-gray-200',
+export const RISK_STYLES: Record<string, string> = {
+  'Low': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Medium': 'bg-amber-50 text-amber-700 border-amber-200',
+  'High': 'bg-orange-50 text-orange-700 border-orange-200',
+  'Critical': 'bg-red-50 text-red-700 border-red-200',
 };
 
-// 🆕 Maturity status labels
-export const INVESTMENT_STATUS_LABELS: Record<string, string> = {
-  pending: 'অপেক্ষমাণ',
-  active: 'সক্রিয়',
-  matured: 'পরিপক্ক',
-  rejected: 'বাতিল',
-  withdrawn: 'প্রত্যাহারকৃত',
-  expired: 'মেয়াদ উত্তীর্ণ',
-  'no_maturity': 'অনির্দিষ্ট মেয়াদ',
+export const ROLE_STYLES: Record<string, string> = {
+  'Lead Investor': 'bg-amber-50 text-amber-800 border-amber-300',
+  'Co-Investor': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Sole Investor': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Participant': 'bg-slate-100 text-slate-600 border-slate-200',
+};
+
+export const STRUCTURE_STYLES: Record<string, string> = {
+  'Somity Only': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Somity as Lead Investor': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Somity as Co-Investor': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'External Lead Investor + Somity': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Multiple Co-Investors': 'bg-violet-50 text-violet-700 border-violet-200',
+  'Joint Investment': 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  'Other': 'bg-slate-100 text-slate-600 border-slate-200',
 };

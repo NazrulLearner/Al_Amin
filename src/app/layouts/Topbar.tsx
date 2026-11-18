@@ -54,6 +54,9 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
       case 'super_admin': return 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-purple-200';
       case 'admin': return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-purple-200';
       case 'cashier': return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-200';
+      case 'manager': return 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-amber-200';
+      case 'accountant': return 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-indigo-200';
+      case 'collector': return 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-teal-200';
       case 'member': return 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-200';
       default: return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-gray-200';
     }
@@ -65,6 +68,10 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
       case 'super_admin': return <Shield className="w-3 h-3 mr-1" />;
       case 'admin': return <Shield className="w-3 h-3 mr-1" />;
       case 'cashier': return <Home className="w-3 h-3 mr-1" />;
+      case 'manager':
+      case 'accountant':
+      case 'collector':
+        return <User className="w-3 h-3 mr-1" />;
       default: return <User className="w-3 h-3 mr-1" />;
     }
   };
@@ -75,6 +82,9 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
       case 'super_admin': return 'সুপার অ্যাডমিন';
       case 'admin': return 'অ্যাডমিন';
       case 'cashier': return 'ক্যাশিয়ার';
+      case 'manager': return 'ম্যানেজার';
+      case 'accountant': return 'অ্যাকাউন্ট্যান্ট';
+      case 'collector': return 'কালেক্টর';
       default: return 'সদস্য';
     }
   };

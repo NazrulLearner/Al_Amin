@@ -1,49 +1,54 @@
-// src/modules/Investments/utils/investmentValidation.ts
+// ==========================================
+// Investment validation — ONE place for the rules.
+// Used by the Create page (to show messages) and by investmentOps (final safety net),
+// so the two can never disagree. Pure functions: no Firebase, easy to test.
+// ==========================================
 
-import { CoInvestor } from '../types/investment.types';
+export type FieldErrors = Record<string, string>;
 
-interface ValidationResult {
-  isValid: boolean;
-  errors: Record<string, string>;
+export interface InvestmentFormValues {
+  investment_name: string;
+  reference_number: string;
+  category: string;
+  total_required_investment: number;
+  expected_return_amount: number;
+  return_rate: number;
+  start_date: string; // 'YYYY-MM-DD' or ''
+  maturity_date: string; // 'YYYY-MM-DD' or ''
 }
 
-export const validateInvestmentForm = (
-  form: any,
-  coInvestors: CoInvestor[]
-): ValidationResult => {
-  const errors: Record<string, string> = {};
+const bad = (n: number) => !Number.isFinite(n) || n < 0;
 
-  if (!form.investmentName?.trim()) errors.investmentName = 'বিনিয়োগের নাম আবশ্যক';
-  if (!form.totalAmount || form.totalAmount <= 0) errors.totalAmount = 'মোট পরিমাণ আবশ্যক';
-  if (!form.somityContribution || form.somityContribution <= 0)
-    errors.somityContribution = 'সমিতির অবদান আবশ্যক';
-  if (form.somityContribution > form.totalAmount)
-    errors.somityContribution = 'সমিতির অবদান মোট পরিমাণের বেশি হতে পারে না';
-  if (!form.startDate) errors.startDate = 'শুরুর তারিখ আবশ্যক';
+export function validateInvestmentForm(v: InvestmentFormValues): FieldErrors {
+  const e: FieldErrors = {};
+  if (!v.investment_name?.trim()) e.investment_name = 'Investment name is required';
+  if (!v.reference_number?.trim()) e.reference_number = 'Reference number is required';
+  if (!v.category) e.category = 'Please select a category';
 
-  // Co-investors validation
-  const totalCoProfitShare = coInvestors.reduce((sum, c) => sum + (c.profitSharePercentage || 0), 0);
-  const maxCoProfitShare = 100 - (form.somityProfitShare || 0);
-  if (coInvestors.length > 0 && totalCoProfitShare > maxCoProfitShare) {
-    errors.coInvestorsProfit = `সহ-বিনিয়োগকারীদের মুনাফার অংশ (${totalCoProfitShare}%) সমিতির পরে বরাদ্দকৃত ${maxCoProfitShare}% এর বেশি হতে পারে না`;
-  }
+  if (bad(v.total_required_investment)) e.total_required_investment = 'Amount cannot be negative';
+  else if (!(v.total_required_investment > 0))
+    e.total_required_investment = 'Total required investment must be greater than 0';
 
-  const totalCoContribution = coInvestors.reduce((sum, c) => sum + (c.contributedAmount || 0), 0);
-  const maxCoContribution = form.totalAmount - (form.somityContribution || 0);
-  if (coInvestors.length > 0 && totalCoContribution > maxCoContribution) {
-    errors.coInvestorsAmount = `সহ-বিনিয়োগকারীদের মোট অবদান (${totalCoContribution}) বাকি জায়গা (${maxCoContribution}) এর বেশি হতে পারে না`;
-  }
+  if (bad(v.expected_return_amount)) e.expected_return_amount = 'Amount cannot be negative';
+  if (bad(v.return_rate) || v.return_rate > 100) e.return_rate = 'Return rate must be between 0 and 100';
 
-  // Money source validation
-  if (form.moneySource !== 'cash' && !form.bankName) errors.bankName = 'ব্যাংকের নাম আবশ্যক';
-  if (form.moneySource !== 'cash' && !form.accountNumber)
-    errors.accountNumber = 'অ্যাকাউন্ট নম্বর আবশ্যক';
-  if (form.moneySource === 'both') {
-    const totalSource = (form.cashAmount || 0) + (form.bankAmount || 0);
-    if (totalSource !== form.somityContribution) {
-      errors.moneySourceMismatch = `নগদ + ব্যাংকের মোট ${totalSource} সমিতির অবদান ${form.somityContribution} এর সমান হতে হবে`;
-    }
-  }
+  // Both dates given -> maturity must not be before start (same day is fine).
+  if (v.start_date && v.maturity_date && v.maturity_date < v.start_date)
+    e.maturity_date = 'Maturity date cannot be before the start date';
+  return e;
+}
 
-  return { isValid: Object.keys(errors).length === 0, errors };
-};
+export function validateParticipantForm(p: {
+  name?: string;
+  committed_amount?: number;
+  return_share_pct?: number;
+}): FieldErrors {
+  const e: FieldErrors = {};
+  if (!p.name?.trim()) e.name = 'Name is required';
+  if (bad(p.committed_amount ?? 0)) e.committed_amount = 'Amount cannot be negative';
+  const rs = p.return_share_pct ?? 0;
+  if (bad(rs) || rs > 100) e.return_share_pct = 'Must be between 0 and 100';
+  return e;
+}
+
+export const firstError = (e: FieldErrors): string | undefined => Object.values(e)[0];

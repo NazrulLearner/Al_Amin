@@ -236,7 +236,19 @@ export const createMember = async (
         deletedAt: null,
         deletedBy: null,
       },
-      personal: undefined
+      personal: {
+        firstName: params.personal?.firstName || params.firstName || '',
+        middleName: params.personal?.middleName || params.middleName || '',
+        lastName: params.personal?.lastName || params.lastName || '',
+        fullName: params.personal?.fullName || params.fullName || '',
+        phone: params.personal?.phone || params.phone || '',
+        alternatePhone: params.personal?.alternatePhone || params.alternatePhone || '',
+        email: params.personal?.email || params.email || '',
+        nidNumber: params.personal?.nidNumber || params.nidNumber || '',
+        dateOfBirth: params.personal?.dateOfBirth || params.dateOfBirth || '',
+        photoUrl,
+        signatureUrl,
+      }
     };
     
     // Save to Firestore
@@ -264,6 +276,7 @@ export const addMember = async (
   const params: CreateMemberParams = {
     id: memberData.id || memberData.uid || undefined,
     uid: memberData.uid || memberData.id || undefined,
+    personal: memberData.personal,
     memberId: memberData.memberId || memberData.id,
     firstName: memberData.firstName || memberData.personal?.firstName || '',
     middleName: memberData.middleName || memberData.personal?.middleName || '',

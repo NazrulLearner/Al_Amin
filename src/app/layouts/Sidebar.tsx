@@ -115,8 +115,10 @@ const getDashboardPath = (role: string | null, isSuperAdmin: boolean): string =>
     case "admin": return "/admin-dashboard";
     case "cashier": return "/cashier-dashboard";
     case "collector": return "/collector/dashboard";
+    case "manager":
+    case "accountant":
     case "member": return "/member-dashboard";
-    default: return "/member-dashboard";
+    default: return "/welcome";
   }
 };
 
@@ -126,6 +128,8 @@ const getDashboardLabel = (role: string | null, isSuperAdmin: boolean): string =
     case "admin": return "Admin Dashboard";
     case "cashier": return "Cashier Dashboard";
     case "collector": return "Collector Dashboard";
+    case "manager": return "Dashboard";
+    case "accountant": return "Dashboard";
     case "member": return "Dashboard";
     default: return "Dashboard";
   }

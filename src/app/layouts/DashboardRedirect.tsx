@@ -29,10 +29,12 @@ const DashboardRedirect: React.FC = () => {
       return <Navigate to="/cashier-dashboard" replace />;
     case 'collector':
       return <Navigate to="/collector/dashboard" replace />;
+    case 'manager':
+    case 'accountant':
     case 'member':
       return <Navigate to="/member-dashboard" replace />;
     default:
-      return <Navigate to="/member-dashboard" replace />;
+      return <Navigate to="/welcome" replace />;
   }
 };
 

@@ -3,7 +3,7 @@ export const membersMenu = [
     key: "members",
     label: "Members",
     icon: "users",
-    roles: ["admin", "cashier", "collector", "super_admin"],
+    roles: ["admin", "cashier", "collector", "manager", "accountant", "super_admin"],
     children: [
       {
         key: "all_members",
@@ -24,7 +24,7 @@ export const membersMenu = [
         label: "My Profile",
         path: "/my-profile",
         icon: "user",
-        roles: ["admin", "cashier", "collector", "member", "super_admin"],  // সবাই নিজের প্রোফাইল দেখতে পারে
+        roles: ["admin", "cashier", "collector", "manager", "accountant", "member", "super_admin"],  // সবাই নিজের প্রোফাইল দেখতে পারে
       },
     ],
   },

@@ -3,13 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase/firebase';
 import { Search, Shield, Ban, CheckCircle } from 'lucide-react';
+import type { UserRole } from '../../../types';
 
 interface PlatformUser {
   uid: string;
   email: string;
   fullName: string;
   phone: string;
-  role: 'super_admin' | 'admin' | 'cashier' | 'member';
+  role: UserRole;
   memberId?: string;
   status: 'active' | 'blocked';
   createdAt: Date;
@@ -21,7 +22,7 @@ const UsersPage: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<PlatformUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'super_admin' | 'admin' | 'cashier' | 'member'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
 
   useEffect(() => {
@@ -108,8 +109,16 @@ const UsersPage: React.FC = () => {
         return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">Admin</span>;
       case 'cashier':
         return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Cashier</span>;
-      default:
+      case 'manager':
+        return <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-700">Manager</span>;
+      case 'accountant':
+        return <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">Accountant</span>;
+      case 'collector':
+        return <span className="px-2 py-1 text-xs rounded-full bg-teal-100 text-teal-700">Collector</span>;
+      case 'member':
         return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Member</span>;
+      default:
+        return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Unknown role</span>;
     }
   };
 
@@ -146,11 +155,14 @@ const UsersPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" placeholder="Search by name, email, phone..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg" />
           </div>
-          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as any)} className="px-4 py-2 border rounded-lg">
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as 'all' | UserRole)} className="px-4 py-2 border rounded-lg">
             <option value="all">All Roles</option>
             <option value="super_admin">Super Admin</option>
             <option value="admin">Admin</option>
             <option value="cashier">Cashier</option>
+            <option value="manager">Manager</option>
+            <option value="accountant">Accountant</option>
+            <option value="collector">Collector</option>
             <option value="member">Member</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="px-4 py-2 border rounded-lg">

@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../../../services/firebase/firebase';
 import { Shield, User, DollarSign, Mail, Lock, Phone, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
+import type { UserRole } from '../../../types';
 
 const AddUser: React.FC = () => {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ const AddUser: React.FC = () => {
     fullName: '',
     email: '',
     phone: '',
-    role: 'member' as 'admin' | 'cashier' | 'member',
+    role: 'member' as UserRole,
     memberId: '',
     password: '',
     confirmPassword: '',
@@ -161,6 +162,8 @@ const AddUser: React.FC = () => {
     switch(formData.role) {
       case 'admin': return 'Admins have full access to all features';
       case 'cashier': return 'Cashiers can manage fees and transactions';
+      case 'manager': return 'Managers have no extra permissions unless granted by the app';
+      case 'accountant': return 'Accountants have no extra permissions unless granted by the app';
       default: return 'Members can view their own profile and loans';
     }
   };
@@ -277,11 +280,16 @@ const AddUser: React.FC = () => {
                 >
                   <option value="member">Member</option>
                   <option value="cashier">Cashier</option>
+                  <option value="manager">Manager</option>
+                  <option value="accountant">Accountant</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 {getRoleDescription()}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Super Admin is not assignable here. Assign collectors through Collector Settings.
               </p>
             </div>
             

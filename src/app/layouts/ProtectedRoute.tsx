@@ -1,8 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
-
-export type UserRole = 'admin' | 'cashier' | 'member' | 'super_admin' | 'collector';
+import type { UserRole } from '../../types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,6 +36,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
           case 'admin': return '/admin-dashboard';
           case 'cashier': return '/cashier-dashboard';
           case 'collector': return '/collector/dashboard';
+          case 'manager':
+          case 'accountant':
           case 'member': return '/member-dashboard';
           default: return '/welcome';
         }

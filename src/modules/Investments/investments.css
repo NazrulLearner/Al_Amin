@@ -1,0 +1,17 @@
+/* Styles the existing investment components rely on (.inp, .label-eyebrow, .scrollbar-thin).
+   They were not defined anywhere inside the module, so forms rendered unstyled. */
+.inp {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #0f172a;
+}
+.inp:focus { outline: 2px solid #10b981; outline-offset: 0; border-color: #10b981; }
+.label-eyebrow {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #64748b;
+}
+.scrollbar-thin { scrollbar-width: thin; }

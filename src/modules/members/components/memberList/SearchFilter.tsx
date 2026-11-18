@@ -72,6 +72,8 @@ const SearchFilter = ({
               <option value="cashier">Cashier</option>
               <option value="manager">Manager</option>
               <option value="accountant">Accountant</option>
+              <option value="collector">Collector</option>
+              <option value="super_admin">Super Admin</option>
             </select>
           </div>
 

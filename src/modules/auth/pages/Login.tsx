@@ -40,8 +40,16 @@ const Login: React.FC = () => {
         case 'cashier':
           navigate('/cashier-dashboard', { replace: true });
           break;
-        default:
+        case 'collector':
+          navigate('/collector/dashboard', { replace: true });
+          break;
+        case 'manager':
+        case 'accountant':
+        case 'member':
           navigate('/member-dashboard', { replace: true });
+          break;
+        default:
+          navigate('/welcome', { replace: true });
       }
     }
   }, [user, navigate]);

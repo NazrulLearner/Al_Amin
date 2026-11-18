@@ -306,7 +306,7 @@ const BankAccounts: React.FC = () => {
               className="mt-4 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all"
             >
               <Plus className="h-4 w-4 inline mr-2" />
-              প্রথম অ্যাকাউন্ট যোগ করুন
+               অ্যাকাউন্ট যোগ করুন
             </button>
           </div>
         )}

@@ -6,12 +6,37 @@ import { bankService } from './bank.service';
 import { financeService } from './financeService';
 
 export const cashService = {
+  // ✅ GUARD: empty cashierId হলে null return
   async getCashBalance(cashierId: string): Promise<any | null> {
     try {
+      if (!cashierId) {
+        console.warn('⚠️ getCashBalance called with empty cashierId');
+        return null;
+      }
+
       const cashRef = collections.cashBalance(cashierId);
       const snapshot = await getDoc(cashRef);
-      if (snapshot.exists()) return { id: snapshot.id, ...snapshot.data() };
-      
+
+      if (snapshot.exists()) {
+        const data = snapshot.data() as any;
+        return {
+          id: snapshot.id,
+          cashierId: data?.cashierId || cashierId,
+          cashierName: data?.cashierName || '',
+          cashierMemberId: data?.cashierMemberId || cashierId,
+          openingBalance: Number(data?.openingBalance) || 0,
+          currentBalance: Number(data?.currentBalance) || 0,
+          totalCollection: Number(data?.totalCollection) || 0,
+          totalDeposit: Number(data?.totalDeposit) || 0,
+          totalDisbursement: Number(data?.totalDisbursement) || 0,
+          lastTransactionDate: data?.lastTransactionDate || new Date(),
+          status: data?.status || 'open',
+          shiftStartTime: data?.shiftStartTime || new Date(),
+          createdAt: data?.createdAt || new Date(),
+          updatedAt: data?.updatedAt || new Date()
+        };
+      }
+
       // Initialize if not exists
       const initialData = {
         cashierId,
@@ -28,15 +53,15 @@ export const cashService = {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      
+
       await setDoc(cashRef, initialData);
-      return initialData;
+      return { id: cashierId, ...initialData };
     } catch (error) {
       console.error('Error getting cash balance:', error);
       return null;
     }
   },
-  
+
   async depositToBank(data: {
     amount: number;
     bankId: string;
@@ -47,6 +72,10 @@ export const cashService = {
     createdByName: string;
   }): Promise<void> {
     try {
+      if (!data.cashierId) throw new Error('cashierId required');
+      if (!data.bankId) throw new Error('bankId required');
+      if (!data.amount || data.amount <= 0) throw new Error('Invalid amount');
+
       // Update cashier balance (subtract)
       const cashRef = collections.cashBalance(data.cashierId);
       await updateDoc(cashRef, {
@@ -55,10 +84,10 @@ export const cashService = {
         lastTransactionDate: new Date(),
         updatedAt: new Date()
       });
-      
+
       // Update bank balance (add)
       await bankService.updateBalance(data.bankId, data.amount, 'add');
-      
+
       // Create transaction record
       await financeService.transferFunds({
         amount: data.amount,
@@ -78,3 +107,5 @@ export const cashService = {
     }
   }
 };
+
+export default cashService;

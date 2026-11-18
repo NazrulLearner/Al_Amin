@@ -59,12 +59,12 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || 'ক্যাশিয়ারের নাম'}
+            placeholder={placeholder || 'ক্যাশিয়ারের নাম'}
             disabled={disabled}
             className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1">ক্যাশিয়ারের নাম বা আইডি</p>
+        <p className="text-xs text-gray-400 mt-1">ক্যাশিয়ারের নাম বা আইডি</p>
       </div>
     );
   }
@@ -99,8 +99,11 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
   );
 };
 
-const formatBalance = (balance: number): string => {
-  return `(${balance.toLocaleString()} ৳)`;
+// ✅ SAFE: undefined/null হলে 0, otherwise original value
+const formatBalance = (balance?: number | null): string => {
+  const value =
+    typeof balance === 'number' && !isNaN(balance) ? balance : 0;
+  return `(${value.toLocaleString('bn-BD')} ৳)`;
 };
 
 export default AccountSelector;
