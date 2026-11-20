@@ -2,6 +2,7 @@
 export interface Actor {
   uid: string;
   name: string;
+  role?: string;
 }
 
 // `user` / `userData` come from useAuth(). Shapes are read defensively.
@@ -10,5 +11,6 @@ export function toActor(user: any, userData: any): Actor {
   return {
     uid: user?.uid ?? '',
     name: userData?.fullName ?? user?.displayName ?? user?.email ?? 'Unknown',
+    role: userData?.role ?? undefined,
   };
 }

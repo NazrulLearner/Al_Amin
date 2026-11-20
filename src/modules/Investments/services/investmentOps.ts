@@ -9,9 +9,10 @@
 // are minimal guards. Items marked [CONFIRM] need the owner's decision.
 // ==========================================================
 
-import { collection, doc, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, query, runTransaction, serverTimestamp, where, writeBatch } from 'firebase/firestore';
 import { db } from '../../../services/firebase/firebase';
 import type { Actor } from '../utils/actor';
+import { hasInvestmentPermission, investmentPermissions } from '../permissions';
 import { firstError, validateInvestmentForm, validateParticipantForm } from '../utils/investmentValidation';
 import type {
   Investment,
@@ -46,6 +47,16 @@ const clean = <T extends object>(o: T): T =>
 
 const assertActor = (a: Actor) => {
   if (!a?.uid) throw new Error('You must be signed in to do this');
+};
+
+const assertCan = (a: Actor, permission: string, what: string) => {
+  if (!hasInvestmentPermission(a.role, permission))
+    throw new Error(`Your role "${a.role || 'unknown'}" is not allowed to ${what}`);
+};
+
+// A soft-deleted investment must not receive any new money or status change.
+const assertNotDeleted = (inv: Investment) => {
+  if (inv.is_deleted) throw new Error('This investment has been deleted');
 };
 
 type NewHistory = Pick<InvestmentHistory, 'event' | 'description' | 'details'>;
@@ -138,6 +149,7 @@ export async function createInvestment({ investment, participants, submit, actor
       other_investors_committed_amount: othersCommitted,
       actual_return_amount: 0,
       status,
+      is_deleted: false,
       createdBy: actor.uid,
       submitted_date: submit ? todayLocal() : undefined,
       submitted_by: submit ? actor.name : undefined,
@@ -193,6 +205,7 @@ export async function changeStatus(
     const snap = await tx.get(invRef);
     if (!snap.exists()) throw new Error('Investment not found');
     const inv = snap.data() as Investment;
+    assertNotDeleted(inv);
 
     if (!NEXT_STATUS[inv.status]?.includes(to))
       throw new Error(`Cannot move from "${inv.status}" to "${to}"`);
@@ -254,6 +267,7 @@ export async function recordFunding(input: RecordFundingArgs, actor: Actor): Pro
     if (!partSnap.exists()) throw new Error('Investor not found');
     const inv = invSnap.data() as Investment;
     const part = partSnap.data() as InvestmentParticipant;
+    assertNotDeleted(inv);
 
     if (part.investment_id !== input.investment_id) throw new Error('Investor does not belong to this investment');
     if (!FUNDING_ALLOWED.includes(inv.status))
@@ -340,6 +354,7 @@ export async function recordReturn(input: RecordReturnArgs, actor: Actor): Promi
     if (!invSnap.exists()) throw new Error('Investment not found');
     const inv = invSnap.data() as Investment;
     const part = partSnap?.exists() ? (partSnap.data() as InvestmentParticipant) : null;
+    assertNotDeleted(inv);
 
     if (partRef && !part) throw new Error('Investor not found');
     if (part && part.investment_id !== input.investment_id) throw new Error('Investor does not belong to this investment');
@@ -395,6 +410,55 @@ export async function recordReturn(input: RecordReturnArgs, actor: Actor): Promi
         event_date: todayLocal(),
         description: `${input.return_type}: received ${received} / expected ${expected}`,
         performed_by: actor.name,
+        created_date: serverTimestamp(),
+      })
+    );
+  });
+}
+
+// ==========================================================
+// 5. Soft delete — the investment document stays; only flags are set
+// ----------------------------------------------------------
+// NEVER touches participants, funding, returns, transactions, documents.
+// [RULE confirmed by owner] blocked when any money was funded or returned.
+// ==========================================================
+export async function softDeleteInvestment(investmentId: string, reason: string, actor: Actor): Promise<void> {
+  assertActor(actor);
+  assertCan(actor, investmentPermissions.DELETE_INVESTMENT, 'delete investments');
+  if (!reason || reason.trim().length < 3) throw new Error('Please write a reason (at least 3 characters)');
+
+  // Money check part 1: any participant already funded? (a query cannot run inside a transaction)
+  const partSnap = await getDocs(query(collection(db, C.participants), where('investment_id', '==', investmentId)));
+  const funded = partSnap.docs.some((d: { data: () => unknown }) => Number((d.data() as { funded_amount?: number }).funded_amount || 0) > 0);
+  if (funded)
+    throw new Error('This investment has funded money. It cannot be deleted — use Cancel or Close instead.');
+
+  const invRef = doc(db, C.investments, investmentId);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(invRef);
+    if (!snap.exists()) throw new Error('Investment not found');
+    const inv = snap.data() as Investment;
+    if (inv.is_deleted) throw new Error('This investment is already deleted');
+    // Money check part 2 (inside the transaction): any return received?
+    if (Number(inv.actual_return_amount || 0) > 0)
+      throw new Error('This investment has received returns. It cannot be deleted — use Cancel or Close instead.');
+
+    tx.update(invRef, {
+      is_deleted: true,
+      deleted_at: serverTimestamp(),
+      deleted_by: actor.name,
+      delete_reason: reason.trim(),
+      updated_date: serverTimestamp(),
+    });
+    tx.set(
+      doc(collection(db, C.history)),
+      clean({
+        investment_id: investmentId,
+        event: 'Deleted',
+        event_date: todayLocal(),
+        description: 'Investment deleted (soft delete)',
+        performed_by: actor.name,
+        details: reason.trim(),
         created_date: serverTimestamp(),
       })
     );

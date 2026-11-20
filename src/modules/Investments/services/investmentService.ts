@@ -13,6 +13,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
@@ -58,6 +59,18 @@ export const investmentService = {
     });
     const created = await getDoc(docRef);
     return fromFirestore(created.id, created.data() as Record<string, unknown>);
+  },
+
+  /**
+   * For the list page: newest first, soft-deleted removed, ONE query.
+   * Safety cap of 100 documents (the society expects ~50 at most). The caller is told when the cap is hit.
+   * `is_deleted` is filtered here in code (not in the query) so older documents that
+   * do not have the field yet still show up — no backfill needed.
+   */
+  async listForTable(max = 100): Promise<{ items: Investment[]; capped: boolean }> {
+    const snap = await getDocs(query(collection(db, COLLECTION), orderBy('created_date', 'desc'), limit(max)));
+    const all = snap.docs.map((d) => fromFirestore(d.id, d.data() as Record<string, unknown>));
+    return { items: all.filter((i) => !i.is_deleted), capped: snap.docs.length >= max };
   },
 
   /**

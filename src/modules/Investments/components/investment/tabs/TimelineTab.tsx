@@ -6,7 +6,7 @@ import React from 'react';
 import { formatDate } from '../../../utils/investmentUtils';
 import {
   CheckCircle2, Circle, FilePlus, FileText, Wallet,
-  TrendingUp, CalendarClock, Lock,
+  TrendingUp, CalendarClock, Lock, Trash2, RotateCcw,
 } from 'lucide-react';
 import type { InvestmentHistory } from '../../../types/investment.types';
 
@@ -24,6 +24,8 @@ const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   'Revision Requested': Circle,
   Withdrawn: Circle,
   Cancelled: Circle,
+  Deleted: Trash2,
+  Restored: RotateCcw,
 };
 
 interface Props {

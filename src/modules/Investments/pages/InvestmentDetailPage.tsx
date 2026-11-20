@@ -68,6 +68,13 @@ export default function InvestmentDetailPage() {
         <ArrowLeft className="h-4 w-4" /> All investments
       </button>
 
+      {inv.is_deleted && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          This investment was deleted{inv.deleted_by ? ` by ${inv.deleted_by}` : ''}
+          {inv.delete_reason ? ` — reason: ${inv.delete_reason}` : ''}. It is hidden from the list and cannot receive new funding or returns.
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{inv.investment_name}</h1>

@@ -61,6 +61,13 @@ export const participantService = {
     return snap.docs.map((d) => fromFirestore(d.id, d.data() as Record<string, unknown>));
   },
 
+  // Only the Somity's own rows (one per investment) — used for the "Funded" column on the list page.
+  async listSomity(): Promise<InvestmentParticipant[]> {
+    const q = query(collection(db, COLLECTION), where('participant_type', '==', 'Somity'));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => fromFirestore(d.id, d.data() as Record<string, unknown>));
+  },
+
   async listAll(): Promise<InvestmentParticipant[]> {
     const snap = await getDocs(collection(db, COLLECTION));
     return snap.docs.map((d) => fromFirestore(d.id, d.data() as Record<string, unknown>));

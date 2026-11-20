@@ -42,7 +42,7 @@ export const DOC_TYPES = [
 export const HISTORY_EVENTS = [
   'Created', 'Updated', 'Submitted', 'Approved', 'Rejected',
   'Funding Recorded', 'Return Recorded', 'Maturity', 'Settlement',
-  'Closed', 'Revision Requested', 'Withdrawn', 'Cancelled',
+  'Closed', 'Revision Requested', 'Withdrawn', 'Cancelled', 'Deleted', 'Restored',
 ];
 
 export const PARTICIPANT_COLORS = [

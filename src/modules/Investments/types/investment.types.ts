@@ -60,6 +60,13 @@ export interface Investment {
   createdBy?: string;
   created_date?: string;
   updated_date?: string;
+  // Soft delete (the document is never removed; children are never touched)
+  is_deleted?: boolean;
+  deleted_at?: string;
+  deleted_by?: string;
+  delete_reason?: string;
+  restored_at?: string; // reserved for a future Restore feature
+  restored_by?: string;
 }
 
 export interface InvestmentParticipant {
@@ -141,7 +148,7 @@ export interface InvestmentDocument {
 export interface InvestmentHistory {
   id: string;
   investment_id: string;
-  event: 'Created' | 'Updated' | 'Submitted' | 'Approved' | 'Rejected' | 'Funding Recorded' | 'Return Recorded' | 'Maturity' | 'Settlement' | 'Closed' | 'Revision Requested' | 'Withdrawn' | 'Cancelled';
+  event: 'Created' | 'Updated' | 'Submitted' | 'Approved' | 'Rejected' | 'Funding Recorded' | 'Return Recorded' | 'Maturity' | 'Settlement' | 'Closed' | 'Revision Requested' | 'Withdrawn' | 'Cancelled' | 'Deleted' | 'Restored';
   event_date: string;
   description?: string;
   performed_by?: string;

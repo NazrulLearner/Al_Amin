@@ -1,3 +1,4 @@
+// src/modules/Investments/permissions.ts
 export const investmentPermissions = {
   // Investment Permissions
   VIEW_INVESTMENTS: 'view_investments',
@@ -39,7 +40,7 @@ export const rolePermissions = {
     investmentPermissions.MANAGE_INVESTMENT_PLANS,
     investmentPermissions.DISTRIBUTE_PROFITS
   ],
-  caches: [
+  cashier: [
     investmentPermissions.VIEW_INVESTMENTS,
     investmentPermissions.CREATE_INVESTMENT,
     investmentPermissions.EDIT_INVESTMENT,
@@ -55,4 +56,19 @@ export const rolePermissions = {
     investmentPermissions.VIEW_INVESTMENT_DETAILS,
     investmentPermissions.VIEW_INVESTMENT_HISTORY
   ]
+};
+
+/**
+ * Check whether a user has a specific investment permission.
+ */
+export const hasInvestmentPermission = (
+  userRole: string,
+  permission: string
+): boolean => {
+  const permissions =
+    rolePermissions[userRole as keyof typeof rolePermissions];
+
+  if (!permissions) return false;
+
+  return permissions.includes(permission);
 };

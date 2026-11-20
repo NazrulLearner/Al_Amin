@@ -5,10 +5,19 @@
 import type { Investment, InvestmentParticipant, InvestmentTotals } from '../types/investment.types';
 
 // ===== Currency Formatting =====
-export const BDT = (amount: number | null | undefined): string => {
-  if (amount === null || amount === undefined || isNaN(Number(amount))) return '৳0';
-  return '৳' + Number(amount).toLocaleString('en-US', { maximumFractionDigits: 0 });
+// Taka with lakh/crore grouping (15,00,000). Paisa shown only when the amount has them.
+// ONE place: when the Settings-based formatter is wired in, change it here.
+export const formatTaka = (n: number | null | undefined): string => {
+  const v = Number(n);
+  if (n === null || n === undefined || !Number.isFinite(v)) return '0';
+  const hasPaisa = Math.abs(v - Math.round(v)) > 0.000001;
+  return v.toLocaleString('en-IN', {
+    minimumFractionDigits: hasPaisa ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
 };
+
+export const BDT = (amount: number | null | undefined): string => '৳' + formatTaka(amount);
 
 export const BDTCompact = (amount: number | null | undefined): string => {
   if (amount === null || amount === undefined || isNaN(Number(amount))) return '৳0';
@@ -73,7 +82,3 @@ export const participantsOf = (
 ): InvestmentParticipant[] => {
   return participants.filter((p) => p.investment_id === investmentId);
 };
-
-// Taka with lakh/crore grouping AND paisa (BDT() above rounds paisa away).
-export const formatTaka = (n: number): string =>
-  Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });

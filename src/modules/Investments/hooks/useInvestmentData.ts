@@ -26,23 +26,42 @@ import type {
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
 
+// One row of the list = the investment + the Somity's own funded amount.
+export type InvestmentRow = Investment & { somity_funded: number };
+
 export function useInvestmentList() {
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [participants, setParticipants] = useState<InvestmentParticipant[]>([]);
+  const [rows, setRows] = useState<InvestmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [capped, setCapped] = useState(false);
+  const alive = useRef(true);
 
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  // 2 reads in total, regardless of how many rows are on screen:
+  //   1) the investments (soft-deleted removed), 2) the Somity's own participant rows.
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [inv, parts] = await Promise.all([investmentService.list(), participantService.listAll()]);
-      setInvestments(inv);
-      setParticipants(parts);
+      const [{ items, capped: isCapped }, somity] = await Promise.all([
+        investmentService.listForTable(),
+        participantService.listSomity(),
+      ]);
+      const funded = new Map<string, number>();
+      somity.forEach((p) => funded.set(p.investment_id, (funded.get(p.investment_id) || 0) + (p.funded_amount || 0)));
+      if (!alive.current) return;
+      setRows(items.map((i) => ({ ...i, somity_funded: funded.get(i.id) || 0 })));
+      setCapped(isCapped);
     } catch (e) {
       console.error('[investments] list load failed', e);
-      setError(msg(e));
+      if (alive.current) setError(msg(e));
     } finally {
-      setLoading(false);
+      if (alive.current) setLoading(false);
     }
   }, []);
 
@@ -50,7 +69,7 @@ export function useInvestmentList() {
     load();
   }, [load]);
 
-  return { investments, participants, loading, error, reload: load };
+  return { rows, loading, error, capped, reload: load };
 }
 
 export function useInvestmentDetail(id?: string) {

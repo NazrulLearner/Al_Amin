@@ -3,7 +3,7 @@
 // ==========================================
 
 import React from 'react';
-import { cn } from '../../utils/cn';
+import { cn } from '../../../../lib/utils';
 
 // ===== MetricCard =====
 export function MetricCard({
@@ -13,6 +13,7 @@ export function MetricCard({
   icon: Icon,
   tone = 'default',
   className,
+  variant = 'default',
 }: {
   label: string;
   value: string | number;
@@ -20,6 +21,8 @@ export function MetricCard({
   icon?: React.ComponentType<{ className?: string }>;
   tone?: 'default' | 'emerald' | 'amber' | 'indigo' | 'red' | 'slate';
   className?: string;
+  // 'summary' = rounder card with a solid coloured left edge (used on the list page)
+  variant?: 'default' | 'summary';
 }) {
   const toneMap: Record<string, string> = {
     default: 'text-foreground',
@@ -29,6 +32,40 @@ export function MetricCard({
     red: 'text-red-700',
     slate: 'text-slate-700',
   };
+
+  const accentMap: Record<string, string> = {
+    default: 'border-l-slate-400',
+    emerald: 'border-l-emerald-600',
+    amber: 'border-l-amber-500',
+    indigo: 'border-l-indigo-600',
+    red: 'border-l-red-600',
+    slate: 'border-l-slate-500',
+  };
+
+  if (variant === 'summary') {
+    return (
+      <div
+        className={cn(
+          'flex min-w-0 items-start justify-between gap-2 rounded-2xl border border-l-4 border-border bg-card p-3 shadow-sm sm:p-4',
+          accentMap[tone],
+          className
+        )}
+      >
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className={cn('mt-1 truncate font-display text-base font-bold tracking-tight sm:text-lg lg:text-xl', toneMap[tone])} title={String(value)}>
+            {value}
+          </p>
+          {sub && <p className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</p>}
+        </div>
+        {Icon && (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-9 sm:w-9">
+            <Icon className={cn('h-4 w-4 sm:h-[18px] sm:w-[18px]', toneMap[tone])} />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
