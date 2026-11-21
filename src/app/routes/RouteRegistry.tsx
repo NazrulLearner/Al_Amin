@@ -26,18 +26,15 @@ import { assetsRoutes } from "../../modules/assets/routes";
 export const RouteRegistry: RouteObject[] = [
   ...publicRoutes,
   ...authRoutes,
+  // Dashboard layout as pathless route - wraps protected routes without claiming "/"
+  // NOTE: No index: true child here - that was conflicting with public home at "/"
   {
-    path: "/",
     element: (
       <ProtectedRoute>
         <DashboardLayout />
       </ProtectedRoute>
     ),
     children: [
-      {
-        index: true,
-        element: <DashboardRedirect />,
-      },
       ...dashboardRoutes,
       ...teamRoutes,
       ...membersRoutes,

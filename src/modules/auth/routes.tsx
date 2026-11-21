@@ -3,8 +3,9 @@ import type { RouteObject } from "react-router-dom";
 
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const CreateAdmin = lazy(() => import("./pages/CreateAdmin"));
 
+// Only Login and ForgotPassword are public routes.
+// Account creation is admin-only (AddUser, CreateMemberAccount in users module).
 export const authRoutes: RouteObject[] = [
   {
     path: "login",
@@ -13,9 +14,5 @@ export const authRoutes: RouteObject[] = [
   {
     path: "forgot-password",
     element: <ForgotPassword />,
-  },
-  {
-    path: "create-admin",
-    element: <CreateAdmin />,
   },
 ];

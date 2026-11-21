@@ -1,23 +1,23 @@
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
-const WelcomePage = lazy(() => import('./pages/WelcomePage'));
-const AboutPage = lazy(() => import('./pages/AboutPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
+const HomePage       = lazy(() => import('./pages/Home'));
+const AboutUsPage    = lazy(() => import('./pages/AboutUs'));
+const ActivitiesPage = lazy(() => import('./pages/Activities'));
+const ContactPage    = lazy(() => import('./pages/Contact'));
+const FAQPage        = lazy(() => import('./pages/FAQ'));
+const PrivacyTermsPage = lazy(() => import('./pages/PrivacyTerms'));
 
 export const publicRoutes: RouteObject[] = [
   {
-    path: '/welcome',
-    element: <WelcomePage />,
+    path: '/',
+    element: <HomePage />,
   },
-  {
-    path: '/about',
-    element: <AboutPage />,
-  },
-  {
-    path: '/contact',
-    element: <ContactPage />,
-  },
+  { path: '/about', element: <AboutUsPage /> },
+  { path: '/activities', element: <ActivitiesPage /> },
+  { path: '/contact', element: <ContactPage /> },
+  { path: '/faq', element: <FAQPage /> },
+  { path: '/privacy-terms', element: <PrivacyTermsPage /> },
 ];
 
 export default publicRoutes;

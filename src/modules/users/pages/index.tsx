@@ -184,7 +184,7 @@ const UsersList: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Manage all users in this somity</p>
         </div>
         <button
-          onClick={() => navigate('/users/AddUser')}
+          onClick={() => navigate('/users/create-member-account')}
           className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
         >
           <PlusCircle size={18} className="mr-2" />

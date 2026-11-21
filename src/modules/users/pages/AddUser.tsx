@@ -1,365 +1,90 @@
-// src/pages/Users/AddUser.tsx
-import React, { useState } from 'react';
+// src/modules/users/pages/AddUser.tsx
+//
+// FUTURE-PHASE PLACEHOLDER — Account creation has been consolidated into
+// CreateMemberAccount.tsx (linking login accounts to existing Member Profiles).
+// This page is intentionally non-functional until a future phase introduces
+// direct admin/staff account creation with privileged role assignment.
+//
+// When ready to re-enable this flow:
+//   1. Implement server-side account provisioning (Cloud Function or equivalent).
+//   2. Re-add the form fields for full name, email, phone, role, password.
+//   3. Enforce forbidden-role whitelist at service layer before writing docs.
+//   4. Replace this placeholder markup with the active form.
+//
+// TODO: CLIENT-SIDE IMPLEMENTATION — REMOVE AFTER CLOUD FUNCTION OR FUTURE-PHASE FORM IS DEPLOYED.
+
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../app/providers/AuthProvider';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, Timestamp } from 'firebase/firestore';
-import { auth, db } from '../../../services/firebase/firebase';
-import { Shield, User, DollarSign, Mail, Lock, Phone, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
-import type { UserRole } from '../../../types';
+import { ShieldCheck, ArrowLeft, Clock } from 'lucide-react';
 
-const AddUser: React.FC = () => {
-  const { user } = useAuth();
+export default function AddUser() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    role: 'member' as UserRole,
-    memberId: '',
-    password: '',
-    confirmPassword: '',
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      setError('Full name is required');
-      return false;
-    }
-    if (!formData.email.trim()) {
-      setError('Email is required');
-      return false;
-    }
-    if (!formData.email.includes('@')) {
-      setError('Valid email is required');
-      return false;
-    }
-    if (!formData.memberId.trim()) {
-      setError('Member ID is required');
-      return false;
-    }
-    if (!formData.password) {
-      setError('Password is required');
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return false;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    
-    try {
-      const now = Timestamp.now();
-      // 1. Create Firebase Auth account
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const newUser = userCredential.user;
-      
-      // 2. Create AppUser document
-      const userRef = doc(db, 'users', newUser.uid);
-      await setDoc(userRef, {
-        uid: newUser.uid,
-        email: formData.email,
-        fullName: formData.fullName,
-        phone: formData.phone || '',
-        photoURL: '',
-        role: formData.role,
-        memberId: formData.memberId,
-        status: 'active',
-        createdAt: now,
-        lastLoginAt: now,
-        updatedAt: now,
-      });
-      
-      // 3. Create Member document if role is member
-      if (formData.role === 'member') {
-        const memberRef = doc(db, 'members', formData.memberId);
-        await setDoc(memberRef, {
-          id: formData.memberId,
-          memberId: formData.memberId,
-          uid: newUser.uid,
-          firstName: formData.fullName.split(' ')[0] || '',
-          lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
-          fullName: formData.fullName,
-          phone: formData.phone || '',
-          email: formData.email,
-          membership: {
-            dateOfJoin: new Date().toISOString().split('T')[0],
-            position: 'General Member',
-            role: 'member',
-            status: 'active',
-            shareCount: 1,
-            perShareFee: 1000,
-            monthlyFee: 1000,
-            totalShareValue: 1000,
-          },
-          metadata: {
-            createdBy: user?.uid,
-            createdAt: now,
-            updatedAt: now,
-            isDeleted: false,
-          },
-        });
-      }
-      
-      setSuccess(`✅ User "${formData.fullName}" created successfully!\n\nLogin credentials:\nEmail: ${formData.email}\nPassword: ${formData.password}`);
-      
-      // Reset form
-      setFormData({
-        fullName: '', email: '', phone: '', role: 'member', memberId: '', password: '', confirmPassword: '',
-      });
-      
-      setTimeout(() => {
-        navigate('/users/index');
-      }, 3000);
-      
-    } catch (err: any) {
-      console.error('Error creating user:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('This email is already registered');
-      } else {
-        setError(err.message || 'Failed to create user');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getRoleIcon = () => {
-    switch(formData.role) {
-      case 'admin': return <Shield size={20} className="text-purple-500" />;
-      case 'cashier': return <DollarSign size={20} className="text-blue-500" />;
-      default: return <User size={20} className="text-green-500" />;
-    }
-  };
-
-  const getRoleDescription = () => {
-    switch(formData.role) {
-      case 'admin': return 'Admins have full access to all features';
-      case 'cashier': return 'Cashiers can manage fees and transactions';
-      case 'manager': return 'Managers have no extra permissions unless granted by the app';
-      case 'accountant': return 'Accountants have no extra permissions unless granted by the app';
-      default: return 'Members can view their own profile and loans';
-    }
-  };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <button
-        onClick={() => navigate('/users/index')}
-        className="flex items-center text-gray-600 hover:text-gray-800 mb-6"
-      >
-        <ArrowLeft size={20} className="mr-2" />
-        Back to Users
-      </button>
-      
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="p-1 bg-gradient-to-r from-green-500 to-blue-500"></div>
-        
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Add New User</h1>
-          <p className="text-sm text-gray-500 mb-6">Create a new user account for this somity</p>
-          
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg flex items-center">
-              <AlertCircle size={16} className="mr-2" />
-              {error}
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+
+      {/* Top bar */}
+      <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
+        <button
+          onClick={() => navigate('/users')}
+          className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-[hsl(160,84%,19%)] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          ফিরে যান
+        </button>
+        <div className="h-5 w-px bg-slate-200" />
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-[hsl(160,84%,19%)] flex items-center justify-center">
+            <ShieldCheck className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-sm font-semibold text-slate-700">Al-Amin Somity</span>
+        </div>
+      </div>
+
+      {/* Main content — centered single column */}
+      <div className="flex-1 flex items-center justify-center py-8 px-4">
+        <div className="w-full max-w-md space-y-5">
+
+          {/* Page header */}
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              অ্যাডমিন/স্টাফ অ্যাকাউন্ট
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              এই কাজটি শীঘ্রই যুক্ত হবে
+            </p>
+          </div>
+
+          {/* Placeholder content */}
+          <div className="rounded-xl border border-slate-100 bg-white p-8 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center">
+              <Clock className="w-8 h-8 text-slate-400" />
             </div>
-          )}
-          
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-lg whitespace-pre-line">
-              {success}
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="Md. Rahim Mia"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Mail size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="user@example.com"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <div className="relative">
-                  <Phone size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="017XXXXXXXX"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Member ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="memberId"
-                  value={formData.memberId}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 uppercase"
-                  placeholder="MEM001"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role <span className="text-red-500">*</span>
-              </label>
-              <div className="flex items-center space-x-4 p-3 border rounded-lg bg-gray-50">
-                {getRoleIcon()}
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="flex-1 bg-transparent focus:outline-none"
-                >
-                  <option value="member">Member</option>
-                  <option value="cashier">Cashier</option>
-                  <option value="manager">Manager</option>
-                  <option value="accountant">Accountant</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {getRoleDescription()}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Super Admin is not assignable here. Assign collectors through Collector Settings.
+              <p className="text-sm font-semibold text-slate-700">শীঘ্রই আসছে</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                অ্যাডমিন ও স্টাফ অ্যাকাউন্ট তৈরির ব্যবস্থা ভবিষ্যৎ ফেজে যুক্ত হবে।
+                এখন শুধুমাত্র সদস্য প্রোফাইলের সাথে যুক্ত লগইন অ্যাকাউন্ট তৈরি করা যায়।
               </p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="Minimum 6 characters"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="Confirm password"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => navigate('/users/index')}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create User'
-                )}
-              </button>
-            </div>
-          </form>
+            <button
+              onClick={() => navigate('/users/create-member-account')}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold bg-[hsl(160,84%,19%)] text-white hover:bg-[hsl(160,84%,16%)] transition-colors shadow-md shadow-green-900/20"
+            >
+              সদস্য অ্যাকাউন্ট তৈরি করুন
+            </button>
+          </div>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/users')}
+              className="text-xs font-medium text-slate-400 hover:text-[hsl(160,84%,19%)] transition-colors underline-offset-4 hover:underline"
+            >
+              ← ব্যবহারকারী তালিকায় ফিরে যান
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default AddUser;
+}
