@@ -1,14 +1,12 @@
-// src/components/memberList/SearchFilter.tsx
-import { Search, Filter, Download } from 'lucide-react';
-import { useState } from 'react';
+// src/modules/members/components/memberList/SearchFilter.tsx
+import { Search, Filter, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SearchFilterProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
-  roleFilter: string;
-  onRoleFilterChange: (value: string) => void;
   onExport: (type: 'pdf' | 'excel') => void;
 }
 
@@ -17,38 +15,49 @@ const SearchFilter = ({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
-  roleFilter,
-  onRoleFilterChange,
-  onExport
+  onExport,
 }: SearchFilterProps) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const away = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setShowExportMenu(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setShowExportMenu(false);
+    document.addEventListener('mousedown', away);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', away);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [showExportMenu]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        {/* Search Box */}
-        <div className="flex-1">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+      <div className="flex flex-col gap-3">
+        {/* Row 1: Search (full-width on mobile) */}
+        <div className="w-full">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Search by name, ID, or phone..."
+              placeholder="নাম, আইডি বা ফোন নম্বর দিয়ে খুঁজুন..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Status Filter */}
-          <div className="relative">
-            <Filter size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        {/* Row 2: Status Filter on Left & Export on Right (side-by-side on mobile) */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Status filter (Left) */}
+          <div className="relative flex-1 sm:flex-none sm:w-48">
+            <Filter size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => onStatusFilterChange(e.target.value)}
-              className="pl-10 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none bg-white"
+              className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none bg-white"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -59,54 +68,43 @@ const SearchFilter = ({
             </select>
           </div>
 
-          {/* Role Filter */}
-          <div>
-            <select
-              value={roleFilter}
-              onChange={(e) => onRoleFilterChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="all">All Roles</option>
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="cashier">Cashier</option>
-              <option value="manager">Manager</option>
-              <option value="accountant">Accountant</option>
-              <option value="collector">Collector</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
-          </div>
-
-          {/* Export Button */}
-          <div className="relative">
+          {/* Export button (Right) */}
+          <div className="relative" ref={ref}>
             <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="inline-flex items-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              type="button"
+              onClick={() => setShowExportMenu((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={showExportMenu}
+              className="inline-flex items-center gap-2 px-3 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors bg-white whitespace-nowrap"
             >
-              <Download size={18} className="mr-2" />
+              <Download size={15} />
               Export
+              <ChevronDown size={14} className={`transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Export Dropdown */}
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+              <div role="menu" className="absolute right-0 z-10 mt-1 w-52 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                <p className="border-b border-gray-100 px-3 py-2 text-xs text-gray-500 bg-gray-50">
+                  Export members matching current filters
+                </p>
                 <button
-                  onClick={() => {
-                    onExport('pdf');
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg border-b border-gray-100"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { setShowExportMenu(false); onExport('excel'); }}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  Export as PDF
+                  <FileSpreadsheet size={15} className="text-emerald-600 flex-shrink-0" />
+                  Export as Excel
                 </button>
                 <button
-                  onClick={() => {
-                    onExport('excel');
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg"
+                  type="button"
+                  role="menuitem"
+                  disabled
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-gray-400 cursor-not-allowed"
                 >
-                  Export as Excel
+                  <FileText size={15} className="flex-shrink-0" />
+                  Export as PDF
+                  <span className="ml-auto text-[11px] bg-gray-100 px-1.5 py-0.5 rounded-full">Soon</span>
                 </button>
               </div>
             )}

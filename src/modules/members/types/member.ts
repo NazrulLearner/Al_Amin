@@ -7,7 +7,7 @@ export interface Member {
   memberId: string;
   uid: string | null;
   role: UserRole;
-  
+
   // Personal Information
   firstName: string;
   middleName?: string;
@@ -18,6 +18,9 @@ export interface Member {
   email?: string;
   nidNumber?: string;
   dateOfBirth: string;
+  gender: 'male' | 'female' | 'other';
+  bloodGroup: string;
+  occupation: string;
   photoUrl?: string;
   signatureUrl?: string;
   
@@ -33,6 +36,11 @@ export interface Member {
     share?: number;
   };
   referenceMemberId?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relation: string;
+  };
   
   // Address
   address: {

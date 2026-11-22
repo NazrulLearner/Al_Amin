@@ -13,7 +13,7 @@ import { useSettingsValidation } from '../hooks/useSettingsValidation';
 import GeneralSettings from '../components/GeneralSettings';
 import ShareSettings from '../components/ShareSettings';
 import FeeSettings from '../components/FeeSettings';
-import MemberSettings from '../components/MemberSettings';
+// import MemberSettings from '../components/MemberSettings'; // REMOVED: Member ID now manual in AddMember
 import IslamicLoanSettings from '../components/IslamicFinanceSettings';
 import InvestmentSettings from '../components/InvestmentSettings';
 import CollectionSettings from '../components/CollectionSettings';
@@ -299,10 +299,6 @@ const SomitySettingsPage: React.FC = () => {
         
         {activeTab === 'fee' && (
           <FeeSettings settings={settings} updateSettings={updateSettings} />
-        )}
-        
-        {activeTab === 'member' && (
-          <MemberSettings settings={settings} updateSettings={updateSettings} />
         )}
         
         {/* ✅ Bank Tab - Using New Components */}

@@ -1,13 +1,13 @@
 // src/components/Members/memberList/MemberTable.tsx
 import { motion } from 'framer-motion';
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
+import {
+  Eye,
+  Edit,
+  Trash2,
+  User,
+  Mail,
+  Phone,
+  Calendar,
   Badge,
   ChevronDown,
   ChevronUp,
@@ -83,7 +83,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays < 30) return `${diffDays} days ago`;
       if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
       return `${Math.floor(diffDays / 365)} years ago`;
@@ -110,11 +110,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
 
   if (members.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm"
-      >
+      <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="w-28 h-28 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center border-4 border-white shadow-lg">
           <Users size={48} className="text-green-400" />
         </div>
@@ -128,7 +124,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
             Add New Member
           </button>
         )}
-      </motion.div>
+      </div>
     );
   }
 
@@ -165,22 +161,16 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {members.map((member, index) => (
-                  <motion.tr
-                    key={member.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="hover:bg-gray-50/80 transition-colors"
-                  >
+                {members.map((member) => (
+                  <tr key={member.id} className="hover:bg-gray-50/80 transition-colors">
                     {/* Member Column with Photo */}
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3 min-w-[200px]">
                         {/* Profile Photo / Avatar */}
                         <div className="relative flex-shrink-0">
                           {member.photoUrl ? (
-                            <img 
-                              src={member.photoUrl} 
+                            <img
+                              src={member.photoUrl}
                               alt={member.fullName}
                               className="w-12 h-12 rounded-full object-cover border-2 border-green-500 shadow-md"
                               onError={(e) => {
@@ -200,7 +190,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                             </div>
                           )}
                           <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
-                            member.status === 'active' ? 'bg-green-500' : 
+                            member.status === 'active' ? 'bg-green-500' :
                             member.status === 'inactive' ? 'bg-gray-400' :
                             member.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
                           }`} />
@@ -277,7 +267,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(member.status)}`}>
                         <span className={`w-2 h-2 rounded-full mr-1.5 flex-shrink-0 ${
-                          member.status === 'active' ? 'bg-green-500' : 
+                          member.status === 'active' ? 'bg-green-500' :
                           member.status === 'inactive' ? 'bg-gray-500' :
                           member.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
                         }`} />
@@ -290,7 +280,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => onView(member.id)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all hover:scale-110 bg-white border border-blue-200 shadow-sm flex-shrink-0"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all hover:scale-105 bg-white border border-blue-200 shadow-sm flex-shrink-0"
                           title="View Profile"
                         >
                           <Eye size={18} />
@@ -298,7 +288,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                         {(userRole === 'admin' || userRole === 'cashier') && (
                           <button
                             onClick={() => onEdit(member.id)}
-                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all hover:scale-110 bg-white border border-emerald-200 shadow-sm flex-shrink-0"
+                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all hover:scale-105 bg-white border border-emerald-200 shadow-sm flex-shrink-0"
                             title="Edit Member"
                           >
                             <Edit size={18} />
@@ -307,7 +297,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                         {userRole === 'admin' && (
                           <button
                             onClick={() => onDelete(member.id)}
-                            className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all hover:scale-110 bg-white border border-rose-200 shadow-sm flex-shrink-0"
+                            className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all hover:scale-105 bg-white border border-rose-200 shadow-sm flex-shrink-0"
                             title="Delete Member"
                           >
                             <Trash2 size={18} />
@@ -315,7 +305,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                         )}
                       </div>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -325,16 +315,13 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
-        {members.map((member, index) => (
-          <motion.div
+        {members.map((member) => (
+          <div
             key={member.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
             className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
           >
             {/* Card Header */}
-            <div 
+            <div
               className="p-4 flex items-center justify-between cursor-pointer"
               onClick={() => toggleExpand(member.id)}
             >
@@ -342,49 +329,51 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                 {/* Profile Photo / Avatar - Mobile */}
                 <div className="relative flex-shrink-0">
                   {member.photoUrl ? (
-                    <img 
-                      src={member.photoUrl} 
+                    <img
+                      src={member.photoUrl}
                       alt={member.fullName}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-green-500 shadow-md"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-green-500 shadow-md"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                         const parent = (e.target as HTMLImageElement).parentElement;
                         if (parent) {
                           const fallback = document.createElement('div');
-                          fallback.className = 'w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md';
+                          fallback.className = 'w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-md';
                           fallback.innerText = getInitials(member.fullName);
                           parent.appendChild(fallback);
                         }
                       }}
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
                       {getInitials(member.fullName)}
                     </div>
                   )}
-                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                    member.status === 'active' ? 'bg-green-500' : 
+                  <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                    member.status === 'active' ? 'bg-green-500' :
                     member.status === 'inactive' ? 'bg-gray-400' :
                     member.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
                   }`} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-gray-900 text-lg truncate" title={member.fullName}>
+                  <div className="font-semibold text-gray-900 text-base truncate" title={member.fullName}>
                     {member.fullName}
                   </div>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <Badge size={12} className="mr-1 flex-shrink-0" />
-                    <span className="font-mono bg-gray-100 px-2 py-0.5 rounded truncate" title={member.memberId}>
-                      {member.memberId}
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 mt-1">
+                    <div className="flex items-center">
+                      <Badge size={12} className="mr-1 flex-shrink-0" />
+                      <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded truncate" title={member.memberId}>
+                        {member.memberId}
+                      </span>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full whitespace-nowrap ${getRoleBadge(member.role)}`}>
+                      {getRoleIcon(member.role)}
+                      {member.role}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap ${getRoleBadge(member.role)}`}>
-                  {getRoleIcon(member.role)}
-                  {member.role}
-                </span>
+              <div className="flex items-center flex-shrink-0 ml-2">
                 {expandedRow === member.id ? (
                   <ChevronUp size={20} className="text-gray-400" />
                 ) : (
@@ -403,7 +392,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
               </div>
               <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ml-2 ${getStatusColor(member.status)}`}>
                 <span className={`w-2 h-2 rounded-full mr-1 ${
-                  member.status === 'active' ? 'bg-green-500' : 
+                  member.status === 'active' ? 'bg-green-500' :
                   member.status === 'inactive' ? 'bg-gray-500' :
                   member.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
                 }`} />
@@ -415,26 +404,26 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
             <div className="px-4 py-3 flex items-center justify-end space-x-2 bg-gray-50/50">
               <button
                 onClick={() => onView(member.id)}
-                className="flex-1 flex items-center justify-center px-3 py-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors border border-blue-200"
+                className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 text-xs font-medium rounded-xl hover:bg-blue-100 transition-colors border border-blue-200"
               >
-                <Eye size={16} className="mr-2" />
+                <Eye size={14} className="mr-1.5" />
                 View
               </button>
               {(userRole === 'admin' || userRole === 'cashier') && (
                 <button
                   onClick={() => onEdit(member.id)}
-                  className="flex-1 flex items-center justify-center px-3 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200"
+                  className="flex-1 flex items-center justify-center px-3 py-2 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200"
                 >
-                  <Edit size={16} className="mr-2" />
+                  <Edit size={14} className="mr-1.5" />
                   Edit
                 </button>
               )}
               {userRole === 'admin' && (
                 <button
                   onClick={() => onDelete(member.id)}
-                  className="flex-1 flex items-center justify-center px-3 py-2.5 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors border border-rose-200"
+                  className="flex-1 flex items-center justify-center px-3 py-2 bg-rose-50 text-rose-600 text-xs font-medium rounded-xl hover:bg-rose-100 transition-colors border border-rose-200"
                 >
-                  <Trash2 size={16} className="mr-2" />
+                  <Trash2 size={14} className="mr-1.5" />
                   Delete
                 </button>
               )}
@@ -442,12 +431,7 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
 
             {/* Expanded Details */}
             {expandedRow === member.id && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-4 pb-4 space-y-3 bg-white border-t border-gray-100"
-              >
+              <div className="px-4 pb-4 space-y-3 bg-white border-t border-gray-100">
                 <div className="grid grid-cols-2 gap-3 pt-3">
                   {member.email && (
                     <div className="col-span-2">
@@ -493,9 +477,9 @@ const MemberTable = ({ members = [], onView, onEdit, onDelete, userRole }: Membe
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )}
-          </motion.div>
+          </div>
         ))}
       </div>
 

@@ -52,6 +52,9 @@ export interface CreateMemberParams {
   email?: string;
   nidNumber?: string;
   dateOfBirth: string;
+  gender?: 'male' | 'female' | 'other';
+  bloodGroup?: string;
+  occupation?: string;
   photoUrl?: string;
   signatureUrl?: string;
   fatherName: string;
@@ -65,6 +68,11 @@ export interface CreateMemberParams {
     share?: number;
   };
   referenceMemberId?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relation: string;
+  };
   address: {
     country?: string;
     division: string;
@@ -142,7 +150,7 @@ export const createMember = async (
     
     // Create clean member object
     const memberUid = params.id || params.uid || null;
-    
+
     const member: Member = {
       id: memberUid || '',
       memberId: params.memberId,
@@ -159,6 +167,9 @@ export const createMember = async (
       email: params.email || '',
       nidNumber: params.nidNumber || '',
       dateOfBirth: params.dateOfBirth || '',
+      gender: params.gender || 'male',
+      bloodGroup: params.bloodGroup || '',
+      occupation: params.occupation || '',
       photoUrl: photoUrl,
       signatureUrl: signatureUrl,
 
@@ -174,6 +185,11 @@ export const createMember = async (
         share: params.nominee.share || 0,
       } : undefined,
       referenceMemberId: params.referenceMemberId || '',
+      emergencyContact: params.emergencyContact ? {
+        name: params.emergencyContact.name || '',
+        phone: params.emergencyContact.phone || '',
+        relation: params.emergencyContact.relation || '',
+      } : undefined,
 
       // Address
       address: {
@@ -287,6 +303,9 @@ export const addMember = async (
     email: memberData.email || memberData.personal?.email || '',
     nidNumber: memberData.nidNumber || memberData.personal?.nidNumber || '',
     dateOfBirth: memberData.dateOfBirth || memberData.personal?.dateOfBirth || '',
+    gender: memberData.personal?.gender || 'male',
+    bloodGroup: memberData.personal?.bloodGroup || '',
+    occupation: memberData.personal?.occupation || '',
     photoUrl: memberData.photoUrl || memberData.personal?.photoUrl || '',
     signatureUrl: memberData.signatureUrl || memberData.personal?.signatureUrl || '',
     fatherName: memberData.fatherName || memberData.family?.fatherName || '',
@@ -294,6 +313,11 @@ export const addMember = async (
     spouseName: memberData.spouseName || memberData.family?.spouseName || '',
     nominee: memberData.nominee || memberData.family?.nominee,
     referenceMemberId: memberData.referenceMemberId || memberData.family?.referenceMemberId || '',
+    emergencyContact: memberData.emergencyContact ? {
+      name: memberData.emergencyContact.name || '',
+      phone: memberData.emergencyContact.phone || '',
+      relation: memberData.emergencyContact.relation || '',
+    } : undefined,
     address: memberData.address || {
       division: '',
       district: '',
@@ -308,7 +332,7 @@ export const addMember = async (
     },
     createdBy: memberData.createdBy || memberData.metadata?.createdBy || 'system'
   };
-  
+
   return createMember(params, photoFile, signatureFile);
 };
 

@@ -1,13 +1,13 @@
 // src/app/layouts/Topbar.tsx
-// অ্যাপের উপরের বার। এখানে নোটিফিকেশন, ইউজার মেনু, এবং হ্যামবার্গার বাটন থাকে।
+// অ্যাপের উপরনের বার — কম্প্যাক্ট, রেসপন্সিভ, প্রফেশনাল
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../providers/AuthProvider';
-import { 
-  Bell, 
-  User, 
-  LogOut, 
-  ChevronDown, 
+import {
+  Bell,
+  User,
+  LogOut,
+  ChevronDown,
   Home,
   Calendar,
   Moon,
@@ -15,244 +15,205 @@ import {
   Settings,
   HelpCircle,
   Shield,
-  Menu // ← হ্যামবার্গার আইকনের জন্য
+  Menu,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ===== প্রপস টাইপ ডিফাইন =====
-// toggleSidebar ফাংশন প্যারেন্ট (DashboardLayout) থেকে আসবে
 interface TopbarProps {
   toggleSidebar?: () => void;
 }
 
 const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
-  // ===== অথ প্রোভাইডার থেকে ডেটা নিচ্ছি =====
   const { user, userData, somityInfo, logout, isSuperAdmin } = useAuth();
-  
-  // ===== লোকাল স্টেট =====
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ===== ইউজার রোল বের করার ফাংশন =====
+  // Close user dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close notifications on outside click
+  const notifRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const getUserRole = (): string => {
     try {
       if (isSuperAdmin) return 'super_admin';
       if (!userData || !somityInfo) return '';
       return userData.role || '';
-    } catch (error) {
-      console.error('Error getting user role:', error);
+    } catch {
       return '';
     }
   };
 
   const userRole = getUserRole();
 
-  // ===== রোল অনুযায়ী ব্যাজ স্টাইল =====
   const getRoleBadgeStyle = (role: string) => {
-    switch(role) {
-      case 'super_admin': return 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-purple-200';
-      case 'admin': return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-purple-200';
-      case 'cashier': return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-200';
-      case 'manager': return 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-amber-200';
-      case 'accountant': return 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-indigo-200';
-      case 'collector': return 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-teal-200';
-      case 'member': return 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-200';
-      default: return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-gray-200';
+    switch (role) {
+      case 'super_admin': return 'bg-purple-600 text-white';
+      case 'admin': return 'bg-purple-500 text-white';
+      case 'cashier': return 'bg-blue-500 text-white';
+      case 'manager': return 'bg-amber-500 text-white';
+      case 'accountant': return 'bg-indigo-500 text-white';
+      case 'collector': return 'bg-teal-500 text-white';
+      case 'member': return 'bg-green-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
-  // ===== রোল আইকন =====
-  const getRoleIcon = (role: string) => {
-    switch(role) {
-      case 'super_admin': return <Shield className="w-3 h-3 mr-1" />;
-      case 'admin': return <Shield className="w-3 h-3 mr-1" />;
-      case 'cashier': return <Home className="w-3 h-3 mr-1" />;
-      case 'manager':
-      case 'accountant':
-      case 'collector':
-        return <User className="w-3 h-3 mr-1" />;
-      default: return <User className="w-3 h-3 mr-1" />;
-    }
-  };
-
-  // ===== রোল টেক্সট (বাংলায়) =====
   const getRoleText = (role: string) => {
-    switch(role) {
-      case 'super_admin': return 'সুপার অ্যাডমিন';
-      case 'admin': return 'অ্যাডমিন';
-      case 'cashier': return 'ক্যাশিয়ার';
-      case 'manager': return 'ম্যানেজার';
-      case 'accountant': return 'অ্যাকাউন্ট্যান্ট';
-      case 'collector': return 'কালেক্টর';
-      default: return 'সদস্য';
+    switch (role) {
+      case 'super_admin': return 'Super Admin';
+      case 'admin': return 'Admin';
+      case 'cashier': return 'Cashier';
+      case 'manager': return 'Manager';
+      case 'accountant': return 'Accountant';
+      case 'collector': return 'Collector';
+      default: return 'Member';
     }
   };
 
-  // ===== ড্রপডাউন টগল =====
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  // ===== ডামি নোটিফিকেশন ডেটা =====
   const notifications = [
     { id: 1, text: 'New member joined', time: '5 min ago', read: false },
     { id: 2, text: 'Fee collection due today', time: '1 hour ago', read: false },
     { id: 3, text: 'Loan approved', time: '2 hours ago', read: true },
   ];
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // ===== বর্তমান তারিখ বাংলায় =====
   const getCurrentDate = () => {
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     };
     return now.toLocaleDateString('bn-BD', options);
   };
 
   return (
-    <motion.header 
+    <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-lg"
     >
-      <div className="flex items-center justify-between px-6 py-3">
-        {/* ===== বাম পাশে: সমিতির তথ্য + হ্যামবার্গার ===== */}
-        <motion.div 
-          className="flex items-center space-x-4"
+      {/* ===== Main row — compact padding on all screens ===== */}
+      <div className="flex items-center justify-between px-3 lg:px-5 py-2">
+        {/* ===== Left side: hamburger + org info ===== */}
+        <motion.div
+          className="flex items-center gap-2 min-w-0"
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          {/* ===== হ্যামবার্গার বাটন (শুধু মোবাইলে দেখাবে) ===== */}
+          {/* Hamburger — flush left on mobile */}
           <button
             onClick={toggleSidebar}
-            className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-all duration-300"
+            className="lg:hidden p-1.5 -ml-1 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
             aria-label="Toggle sidebar"
           >
-            <Menu className="w-6 h-6 text-white" />
+            <Menu className="w-5 h-5 text-white" />
           </button>
 
-          {/* ===== সুপার অ্যাডমিন ভিউ ===== */}
+          {/* Super Admin view */}
           {isSuperAdmin && !somityInfo ? (
-            <>
-              <div className="relative">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                  <span className="text-xl font-bold text-white">🌍</span>
-                </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30 flex-shrink-0">
+                <span className="text-sm font-bold">🌍</span>
               </div>
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-2">
-                  <motion.h1 
-                    className="text-xl font-bold tracking-tight"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    Super Admin Panel
-                  </motion.h1>
-                  <motion.span 
-                    className={`ml-2 px-3 py-1 text-xs font-medium rounded-full shadow-md flex items-center ${getRoleBadgeStyle('super_admin')}`}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {getRoleIcon('super_admin')}
-                    {getRoleText('super_admin')}
-                  </motion.span>
-                </div>
-                <div className="flex items-center text-xs text-emerald-100 mt-1">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  <span>{getCurrentDate()}</span>
-                </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold truncate whitespace-nowrap">Super Admin Panel</p>
+                <span className="inline-flex mt-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-purple-600 text-white">
+                  Super Admin
+                </span>
               </div>
-            </>
+            </div>
           ) : somityInfo ? (
-            // ===== সাধারণ ইউজার ভিউ =====
-            <>
-              <div className="relative">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                  <span className="text-xl font-bold text-white">
+            // Regular user view
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
+                  <span className="text-sm font-bold">
                     {somityInfo.name?.charAt(0) || 'S'}
                   </span>
                 </div>
-                <motion.div 
-                  className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                />
               </div>
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-2">
-                  <motion.h1 
-                    className="text-xl font-bold tracking-tight"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
+              <div className="min-w-0">
+                {/* Single-line layout: name + role badge side by side */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="text-sm font-bold truncate">{somityInfo.name}</p>
+                  <span
+                    className={`flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeStyle(userRole)}`}
                   >
-                    {somityInfo.name}
-                  </motion.h1>
-                  <motion.span 
-                    className={`ml-2 px-3 py-1 text-xs font-medium rounded-full shadow-md flex items-center ${getRoleBadgeStyle(userRole)}`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {getRoleIcon(userRole)}
                     {getRoleText(userRole)}
-                  </motion.span>
+                  </span>
                 </div>
-                <div className="flex items-center text-xs text-emerald-100 mt-1">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  <span>{getCurrentDate()}</span>
-                </div>
+                {/* Date: hidden on very narrow mobile (below 380px), visible on wider */}
+                <p className="text-[10px] text-emerald-100 mt-0.5 hidden min-[380px]:block">
+                  {getCurrentDate()}
+                </p>
               </div>
-            </>
+            </div>
           ) : null}
         </motion.div>
 
-        {/* ===== ডান পাশে: ইউজার মেনু ===== */}
-        <motion.div 
-          className="flex items-center space-x-3"
+        {/* ===== Right side: actions + user profile ===== */}
+        <motion.div
+          className="flex items-center gap-1"
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          {/* ===== ডার্ক মোড টগল ===== */}
-          <motion.button 
-            whileHover={{ scale: 1.1, rotate: 15 }}
-            whileTap={{ scale: 0.9 }}
+          {/* Dark mode toggle */}
+          <button
             onClick={toggleDarkMode}
-            className="p-2 hover:bg-white/10 rounded-full transition-all duration-300 relative group"
+            className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+            aria-label="Toggle dark mode"
           >
-            {isDarkMode ? 
-              <Sun className="w-5 h-5 text-yellow-300" /> : 
-              <Moon className="w-5 h-5 text-white" />
-            }
-            <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-            </span>
-          </motion.button>
+            {isDarkMode ? (
+              <Sun className="w-4 h-4 text-yellow-300" />
+            ) : (
+              <Moon className="w-4 h-4 text-white" />
+            )}
+          </button>
 
-          {/* ===== নোটিফিকেশন ===== */}
-          <div className="relative">
-            <motion.button 
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+          {/* Notifications */}
+          <div ref={notifRef} className="relative">
+            <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 hover:bg-white/10 rounded-full transition-all duration-300 relative group"
+              className="p-1.5 hover:bg-white/10 rounded-full transition-colors relative"
+              aria-label="Notifications"
             >
-              <Bell className="w-5 h-5 text-white" />
+              <Bell className="w-4 h-4 text-white" />
               {unreadCount > 0 && (
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-white"
-                >
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center border-2 border-emerald-600">
                   {unreadCount}
-                </motion.span>
+                </span>
               )}
-            </motion.button>
+            </button>
 
-            {/* ===== নোটিফিকেশন ড্রপডাউন ===== */}
             <AnimatePresence>
               {showNotifications && (
                 <motion.div
@@ -268,14 +229,15 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
                   {notifications.length > 0 ? (
                     <>
                       {notifications.map((notif) => (
-                        <motion.div
+                        <div
                           key={notif.id}
-                          whileHover={{ backgroundColor: '#f3f4f6' }}
-                          className={`px-4 py-3 cursor-pointer transition-colors ${!notif.read ? 'bg-blue-50' : ''}`}
+                          className={`px-4 py-3 cursor-pointer transition-colors ${
+                            !notif.read ? 'bg-blue-50' : ''
+                          }`}
                         >
                           <p className="text-sm text-gray-800">{notif.text}</p>
                           <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                        </motion.div>
+                        </div>
                       ))}
                       <div className="px-4 py-2 border-t border-gray-100">
                         <button className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
@@ -290,35 +252,37 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
               )}
             </AnimatePresence>
           </div>
-          
-          {/* ===== ইউজার মেনু ===== */}
-          <div className="relative">
-            <motion.button 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+
+          {/* User avatar + dropdown */}
+          <div ref={dropdownRef} className="relative ml-1">
+            <button
               onClick={toggleDropdown}
-              className="flex items-center space-x-3 p-2 hover:bg-white/10 rounded-xl transition-all duration-300 group"
+              className="flex items-center gap-2 p-1.5 hover:bg-white/10 rounded-xl transition-colors"
             >
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg group-hover:shadow-xl transition-shadow">
+              {/* Avatar always visible even on mobile */}
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center text-white font-bold shadow-lg">
                   {user?.fullName?.charAt(0) || userData?.fullName?.charAt(0) || 'U'}
                 </div>
-                <motion.div 
-                  className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-emerald-600" />
               </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-semibold">{user?.fullName || userData?.fullName || 'User'}</p>
-                <p className="text-xs text-emerald-100">{userData?.email || 'user@example.com'}</p>
+              {/* Name/email hidden on mobile, shown on tablet+ */}
+              <div className="hidden sm:block text-left min-w-0">
+                <p className="text-xs font-semibold truncate">
+                  {user?.fullName || userData?.fullName || 'User'}
+                </p>
+                <p className="text-[10px] text-emerald-100 truncate">
+                  {userData?.email || 'user@example.com'}
+                </p>
               </div>
-              <motion.div animate={{ rotate: isDropdownOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
-                <ChevronDown className="w-4 h-4 text-white/80" />
-              </motion.div>
-            </motion.button>
-            
-            {/* ===== ড্রপডাউন মেনু ===== */}
+              {/* Chevron always visible */}
+              <ChevronDown
+                className={`w-3 h-3 text-white/80 transition-transform flex-shrink-0 ${
+                  isDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
             <AnimatePresence>
               {isDropdownOpen && (
                 <motion.div
@@ -329,7 +293,9 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
                   className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 border border-gray-100"
                 >
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-semibold text-gray-800">{user?.fullName || userData?.fullName}</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {user?.fullName || userData?.fullName}
+                    </p>
                     <p className="text-xs text-gray-500 mt-1">{userData?.email}</p>
                     {isSuperAdmin && (
                       <p className="text-xs text-purple-600 mt-1 flex items-center">
@@ -339,49 +305,44 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
                     )}
                   </div>
                   {isSuperAdmin ? (
-                    <motion.a 
+                    <a
                       href="/super-admin"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      whileHover={{ x: 5 }}
                     >
                       <Home className="w-4 h-4 mr-3 text-purple-600" />
                       <span>Super Admin Dashboard</span>
-                    </motion.a>
+                    </a>
                   ) : (
-                    <motion.a 
+                    <a
                       href="/my-profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      whileHover={{ x: 5 }}
                     >
                       <User className="w-4 h-4 mr-3 text-emerald-600" />
                       <span>প্রোফাইল</span>
-                    </motion.a>
+                    </a>
                   )}
-                  <motion.a 
+                  <a
                     href="/settings/account"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    whileHover={{ x: 5 }}
                   >
                     <Settings className="w-4 h-4 mr-3 text-emerald-600" />
                     <span>সেটিংস</span>
-                  </motion.a>
-                  <motion.a 
+                  </a>
+                  <a
                     href="/support"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    whileHover={{ x: 5 }}
                   >
                     <HelpCircle className="w-4 h-4 mr-3 text-emerald-600" />
                     <span>সাহায্য</span>
-                  </motion.a>
-                  <div className="border-t border-gray-100 my-2"></div>
-                  <motion.button
-                    whileHover={{ backgroundColor: '#fee2e2' }}
+                  </a>
+                  <div className="border-t border-gray-100 my-2" />
+                  <button
                     onClick={logout}
                     className="flex w-full text-left items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-4 h-4 mr-3" />
                     <span>লগআউট</span>
-                  </motion.button>
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -389,13 +350,8 @@ const Topbar: React.FC<TopbarProps> = ({ toggleSidebar }) => {
         </motion.div>
       </div>
 
-      {/* ===== নিচের ডেকোরেশন লাইন ===== */}
-      <motion.div 
-        className="h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ delay: 0.5, duration: 0.8 }}
-      />
+      {/* Bottom decorative line */}
+      <div className="h-0.5 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
     </motion.header>
   );
 };

@@ -8,8 +8,13 @@ const MyProfile: React.FC = () => {
 
   useEffect(() => {
     if (userData) {
-      // Redirect to the member's own profile
-      navigate(`/members/profile/${userData.uid}`);
+      // Redirect to the member's own profile using memberId (Firestore document ID)
+      if (userData.memberId) {
+        navigate(`/members/profile/${userData.memberId}`);
+      } else {
+        // Show error if memberId is not available
+        navigate('/members/profile/error?reason=missing_memberId');
+      }
     } else {
       navigate('/login');
     }

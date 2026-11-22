@@ -16,27 +16,27 @@ import DocumentsTab from '../components/tabs/DocumentsTab';
 import EditMember from '../components/memberList/EditMember';
 
 const MemberProfilePage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { memberId } = useParams<{ memberId: string }>();
   const navigate = useNavigate();
   const { userData } = useAuth();
-  
+
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
-    if (id) {
+    if (memberId) {
       fetchMember();
     }
-  }, [id]);
+  }, [memberId]);
 
   const fetchMember = async () => {
     try {
       setLoading(true);
-      if (!id) return;
+      if (!memberId) return;
       // ✅ FIX: Single somity data - single somity!
-      const data = await memberService.getMemberById(id);
+      const data = await memberService.getMemberById(memberId);
       setMember(data);
     } catch (error) {
       console.error('Error fetching member:', error);

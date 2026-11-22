@@ -11,19 +11,19 @@ import StatisticsCards from '../components/memberList/StatisticsCards';
 import SearchFilter from '../components/memberList/SearchFilter';
 import MemberTable from '../components/memberList/MemberTable';
 import EditMember from '../components/memberList/EditMember';
+import { exportMembersToExcel } from '../utils/memberExport';
 
 const MemberList = () => {
   const [members, setMembers] = useState<SimpleMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  
+
   const { userData, somityInfo } = useAuth();
   const { loading: settingsLoading } = useSomitySettings();
   const navigate = useNavigate();
@@ -40,7 +40,6 @@ const MemberList = () => {
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      // Single somity data! Direct call
       console.log('Fetching all members...');
       const membersData = await memberService.getSimpleMembers();
       console.log('Members data received:', membersData?.length || 0);
@@ -55,16 +54,15 @@ const MemberList = () => {
 
   // Filter members
   const filteredMembers = members.filter(member => {
-    const matchesSearch = 
+    const matchesSearch =
       member.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.memberId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.phone?.includes(searchTerm) ||
       (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
-    const matchesRole = roleFilter === 'all' || member.role === roleFilter;
-    
-    return matchesSearch && matchesStatus && matchesRole;
+
+    return matchesSearch && matchesStatus;
   });
 
   // Pagination
@@ -99,9 +97,8 @@ const MemberList = () => {
 
   const handleDeleteMember = async (memberId: string) => {
     if (!window.confirm('আপনি কি নিশ্চিত এই সদস্যকে ডিলিট করতে চান?')) return;
-    
+
     try {
-      // Single somity data!
       await memberService.deleteMember(memberId, userData?.uid || 'system');
       await fetchMembers();
     } catch (error) {
@@ -111,8 +108,9 @@ const MemberList = () => {
   };
 
   const handleExport = (type: 'pdf' | 'excel') => {
-    console.log(`Exporting as ${type}`, filteredMembers);
-    alert(`${filteredMembers.length} জন সদস্য ${type.toUpperCase()} হিসেবে এক্সপোর্ট হচ্ছে`);
+    if (type === 'excel') {
+      exportMembersToExcel(filteredMembers);
+    }
   };
 
   const handleRefresh = () => {
@@ -188,8 +186,6 @@ const MemberList = () => {
           onSearchChange={setSearchTerm}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
-          roleFilter={roleFilter}
-          onRoleFilterChange={setRoleFilter}
           onExport={handleExport}
         />
 
@@ -262,7 +258,6 @@ const MemberList = () => {
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
-                setRoleFilter('all');
               }}
               className="mt-3 text-green-600 hover:text-green-700 text-sm font-medium"
             >

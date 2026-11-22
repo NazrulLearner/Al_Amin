@@ -1,16 +1,18 @@
 // src/pages/Members/AddMember.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   User, ArrowRight, ArrowLeft, CheckCircle2, Upload, X, Save,
-  Users, Home, FileText, Heart, Loader2
+  Users, Home, FileText, Heart, Loader2, AlertCircle, Check,
+  Calendar, Phone, Mail, MapPin, IdCard, CreditCard, Shield
 } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { useSomitySettings } from '../../../app/context/SomitySettingsProvider';
 import { memberService } from '../services/memberService';
 import AddressSelect from '../components/addMember/AddressSelect';
 import type { UserRole } from '../../../types';
+import { toast } from 'sonner';
 
 // Initial Form State - somity data!
 const initialFormState = {
@@ -24,6 +26,9 @@ const initialFormState = {
     email: '',
     nidNumber: '',
     dateOfBirth: '',
+    gender: 'male' as const,
+    bloodGroup: '',
+    occupation: '',
     photoUrl: '',
     signatureUrl: ''
   },
@@ -39,6 +44,11 @@ const initialFormState = {
       share: 0
     },
     referenceMemberId: ''
+  },
+  emergencyContact: {
+    name: '',
+    phone: '',
+    relation: ''
   },
   address: {
     country: 'Bangladesh',
@@ -107,7 +117,6 @@ const AddMember = () => {
   // Get settings values
   const shareSettings = settings?.share;
   const feeSettings = settings?.fee;
-  const memberSettings = settings?.member;
 
   // Calculate values from settings
   const perShareValue = shareSettings?.perShareValue || 1000;
@@ -116,24 +125,15 @@ const AddMember = () => {
   const defaultShare = shareSettings?.defaultShare || 1;
   const feeAmountPerShare = feeSettings?.amountPerShare || 1000;
   const defaultMonthlyFee = defaultShare * feeAmountPerShare;
-  const memberIdPrefix = memberSettings?.memberIdPrefix || 'MBR-';
-  const memberIdDigitLength = memberSettings?.memberIdDigitLength || 3;
 
-  // Generate member ID
-  const generateMemberId = () => {
-    const randomNum = Math.floor(Math.random() * Math.pow(10, memberIdDigitLength));
-    const paddedNum = randomNum.toString().padStart(memberIdDigitLength, '0');
-    return `${memberIdPrefix}${paddedNum}`;
-  };
-
-  // Initialize form with settings
+  // Initialize form with settings (no auto Member ID generation)
   useEffect(() => {
     if (!settingsLoading) {
       setFormData(prev => ({
         ...prev,
         membership: {
           ...prev.membership,
-          memberId: memberSettings?.autoGenerateMemberId ? generateMemberId() : '',
+          memberId: '', // Manual entry required - no auto-generation
           perShareFee: perShareValue,
           shareCount: defaultShare,
           monthlyFee: defaultMonthlyFee,
@@ -219,46 +219,91 @@ const AddMember = () => {
   const removePhoto = () => { setPhotoFile(null); setPhotoPreview(''); };
   const removeSignature = () => { setSignatureFile(null); setSignaturePreview(''); };
 
-  const regenerateMemberId = () => {
-    const newId = generateMemberId();
-    handleInputChange('membership.memberId', newId);
+  
+  // Validation with Bengali messages
+  const getErrorMessage = (field: string): string => {
+    const messages: Record<string, string> = {
+      'membership.memberId': 'সদস্য আইডি আবশ্যক',
+      'personal.firstName': 'প্রথম নাম আবশ্যক',
+      'personal.lastName': 'উপনাম আবশ্যক',
+      'personal.phone': 'ফোন নম্বর আবশ্যক',
+      'personal.dateOfBirth': 'জন্ম তারিখ আবশ্যক',
+      'family.fatherName': "পিতার নাম আবশ্যক",
+      'family.motherName': "মাতার নাম আবশ্যক",
+      'membership.shareCount': `সর্বনিম্ন শেয়ার ${minShare} এবং সর্বোচ্চ ${maxShare}`,
+      'address.district': 'জেলা আবশ্যক',
+      'address.presentAddress': 'বর্তমান ঠিকানা আবশ্যক',
+      'address.permanentAddress': 'স্থায়ী ঠিকানা আবশ্যক',
+    };
+    return messages[field] || 'This field is required';
   };
 
-  // Validation
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.membership.memberId?.trim()) newErrors['membership.memberId'] = 'Member ID is required';
-    if (!formData.personal.firstName?.trim()) newErrors['personal.firstName'] = 'First name is required';
-    if (!formData.personal.lastName?.trim()) newErrors['personal.lastName'] = 'Last name is required';
-    if (!formData.personal.phone?.trim()) newErrors['personal.phone'] = 'Phone number is required';
-    if (!formData.personal.dateOfBirth) newErrors['personal.dateOfBirth'] = 'Date of birth is required';
+    if (!formData.membership.memberId?.trim()) newErrors['membership.memberId'] = getErrorMessage('membership.memberId');
+    if (!formData.personal.firstName?.trim()) newErrors['personal.firstName'] = getErrorMessage('personal.firstName');
+    if (!formData.personal.lastName?.trim()) newErrors['personal.lastName'] = getErrorMessage('personal.lastName');
+    if (!formData.personal.phone?.trim()) newErrors['personal.phone'] = getErrorMessage('personal.phone');
+    if (!formData.personal.dateOfBirth) newErrors['personal.dateOfBirth'] = getErrorMessage('personal.dateOfBirth');
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('দয়া করে আবশ্যক ফিল্ডগুলো পূরণ করুন');
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const validateStep2 = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.family.fatherName?.trim()) newErrors['family.fatherName'] = "Father's name is required";
-    if (!formData.family.motherName?.trim()) newErrors['family.motherName'] = "Mother's name is required";
-    if (formData.membership.shareCount < minShare) newErrors['membership.shareCount'] = `Minimum share count is ${minShare}`;
-    if (formData.membership.shareCount > maxShare) newErrors['membership.shareCount'] = `Maximum share count is ${maxShare}`;
+    if (!formData.family.fatherName?.trim()) newErrors['family.fatherName'] = getErrorMessage('family.fatherName');
+    if (!formData.family.motherName?.trim()) newErrors['family.motherName'] = getErrorMessage('family.motherName');
+    if (formData.membership.shareCount < minShare || formData.membership.shareCount > maxShare) {
+      newErrors['membership.shareCount'] = getErrorMessage('membership.shareCount');
+    }
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('দয়া করে আবশ্যক ফিল্ডগুলো পূরণ করুন');
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const validateStep3 = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.address.district?.trim()) newErrors['address.district'] = 'District is required';
-    if (!formData.address.presentAddress?.trim()) newErrors['address.presentAddress'] = 'Present address is required';
-    if (!formData.address.sameAsPresent && !formData.address.permanentAddress?.trim()) newErrors['address.permanentAddress'] = 'Permanent address is required';
+    if (!formData.address.district?.trim()) newErrors['address.district'] = getErrorMessage('address.district');
+    if (!formData.address.presentAddress?.trim()) newErrors['address.presentAddress'] = getErrorMessage('address.presentAddress');
+    if (!formData.address.sameAsPresent && !formData.address.permanentAddress?.trim()) {
+      newErrors['address.permanentAddress'] = getErrorMessage('address.permanentAddress');
+    }
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('দয়া করে আবশ্যক ফিল্ডগুলো পূরণ করুন');
+    }
     return Object.keys(newErrors).length === 0;
   };
 
+  // Validate Member ID format
+  const validateMemberId = useCallback((value: string) => {
+    if (!value.trim()) return;
+    const upperValue = value.toUpperCase();
+    // Allow alphanumeric, hyphens, underscores
+    if (!/^[A-Z0-9\-_]+$/.test(upperValue)) {
+      setErrors(prev => ({ ...prev, 'membership.memberId': 'Member ID can only contain letters, numbers, hyphens, and underscores' }));
+      return;
+    }
+    if (upperValue.length < 3 || upperValue.length > 20) {
+      setErrors(prev => ({ ...prev, 'membership.memberId': 'Member ID must be 3-20 characters' }));
+      return;
+    }
+    setErrors(prev => {
+      const next = { ...prev };
+      delete next['membership.memberId'];
+      return next;
+    });
+  }, []);
+
   const steps = [
-    { number: 1, title: 'Personal Info', icon: User },
-    { number: 2, title: 'Family & Membership', icon: Users },
-    { number: 3, title: 'Address & Documents', icon: Home },
+    { number: 1, title: 'Personal Info', bnTitle: 'ব্যক্তিগত তথ্য', icon: User },
+    { number: 2, title: 'Family & Membership', bnTitle: 'পরিবার ও সদস্যাত্ব', icon: Users },
+    { number: 3, title: 'Address & Documents', bnTitle: 'ঠিকানা ও নথি', icon: Home },
   ];
 
   const nextStep = () => {
@@ -272,13 +317,13 @@ const AddMember = () => {
   // Submit Handler - Single somity data!
   const handleSubmit = async () => {
     if (!validateStep3()) return;
-    
+
     setLoading(true);
-    
+
     try {
       const finalMemberId = formData.membership.memberId;
       if (!finalMemberId) {
-        alert('Please enter a Member ID');
+        toast.error('দয়া করে সদস্য আইডি লিখুন');
         setLoading(false);
         return;
       }
@@ -287,6 +332,7 @@ const AddMember = () => {
         memberId: finalMemberId,
         personal: formData.personal,
         family: formData.family,
+        emergencyContact: formData.emergencyContact,
         address: {
           ...formData.address,
           permanentAddress: formData.address.sameAsPresent ? formData.address.presentAddress : formData.address.permanentAddress
@@ -303,14 +349,17 @@ const AddMember = () => {
 
       // Single somity data!
       await memberService.addMember(memberData, photoFile, signatureFile);
-      
-      alert(`✅ Member successfully added!\n\nMember ID: ${finalMemberId}\nName: ${formData.personal.fullName}\nMonthly Fee: ৳${formData.membership.monthlyFee}`);
-      
+
+      toast.success(`✅ সদস্য সফলভাবে যোগ করা হয়েছে!`, {
+        description: `Member ID: ${finalMemberId} | নাম: ${formData.personal.fullName} | মাসিক ফি: ৳${formData.membership.monthlyFee}`,
+        duration: 5000
+      });
+
       navigate('/members/index');
-      
+
     } catch (error: any) {
       console.error('Error saving member:', error);
-      alert(`Error: ${error.message}`);
+      toast.error(`❌ ত্রুটি: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -318,12 +367,12 @@ const AddMember = () => {
 
   const getError = (field: string) => errors[field];
   const inputClass = (field?: string) =>
-    `block w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 ${
+    `block w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 placeholder:text-sm sm:placeholder:text-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 ${
       field && getError(field) ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300'
     }`;
-  const readOnlyClass = 'block min-h-[42px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600 shadow-sm';
-  const secondaryButtonClass = 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-gray-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
-  const primaryButtonClass = 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+  const readOnlyClass = 'block min-h-[40px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 shadow-sm';
+  const secondaryButtonClass = 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-gray-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+  const primaryButtonClass = 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 
   if (settingsLoading) {
     return (
@@ -335,37 +384,47 @@ const AddMember = () => {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-green-50 to-cyan-50 px-4 py-6 text-gray-900 sm:px-6">
+    <div className="min-h-full bg-gradient-to-br from-green-50 to-cyan-50 px-3 py-4 text-gray-900 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-6xl">
         {/* Header */}
-        <div className="mb-6 text-center">
-          <h1 className="mb-2 text-2xl font-bold text-gray-800">Add New Member</h1>
-          <p className="text-sm text-gray-600">Complete the member registration process</p>
+        <div className="mb-4 text-center">
+          <h1 className="mb-2 text-xl sm:text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
+            <Users className="text-green-600 h-5 w-5 sm:h-6 sm:w-6" />
+            নতুন সদস্য যোগ করুন
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600">সদস্য নিবন্ধন প্রক্রিয়া পূরণ করুন</p>
           {somityInfo && (
-            <p className="text-xs text-green-600 mt-1">Somity: {somityInfo.name}</p>
+            <p className="text-xs text-green-600 mt-1 flex items-center justify-center gap-1">
+              <Shield size={12} /> সমিতি: {somityInfo.name}
+            </p>
           )}
-          <div className="text-xs text-gray-500 mt-2">
-            Share Value: ৳{perShareValue} | Monthly Fee: ৳{feeAmountPerShare}/share | Max Share: {maxShare}
-          </div>
         </div>
 
-        {/* Progress Steps */}
+        {/* Progress Steps - Mobile Optimized */}
         <div className="mb-6 flex justify-center overflow-x-auto pb-2">
-          <div className="inline-flex min-w-max items-center rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+          <div className="inline-flex min-w-max items-center rounded-xl border border-gray-100 bg-white px-3 py-2 shadow-sm">
             {steps.map((step, index) => {
               const StepIcon = step.icon;
+              const isActive = currentStep >= step.number;
+              const isCompleted = currentStep > step.number;
               return (
                 <div key={step.number} className="flex items-center">
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                    currentStep >= step.number ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 text-gray-400'
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                    isActive ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 text-gray-400'
                   }`}>
-                    {currentStep > step.number ? <CheckCircle2 size={16} /> : <StepIcon size={16} />}
+                    {isCompleted ? <CheckCircle2 size={14} /> : <StepIcon size={14} />}
                   </div>
-                  <span className={`ml-2 whitespace-nowrap text-sm font-medium ${currentStep >= step.number ? 'text-green-600' : 'text-gray-400'}`}>
-                    {step.title}
-                  </span>
+                  {/* Mobile: Show only icons; Desktop: Show labels */}
+                  <div className="hidden sm:block ml-1.5">
+                    <span className={`whitespace-nowrap text-xs font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                      {step.title}
+                    </span>
+                    <span className={`block whitespace-nowrap text-[10px] ${isActive ? 'text-green-500' : 'text-gray-300'}`}>
+                      {step.bnTitle}
+                    </span>
+                  </div>
                   {index < steps.length - 1 && (
-                    <div className={`mx-4 h-0.5 w-12 ${currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`mx-2 h-0.5 w-8 sm:w-12 ${isCompleted ? 'bg-green-500' : 'bg-gray-300'}`} />
                   )}
                 </div>
               );
@@ -373,91 +432,126 @@ const AddMember = () => {
           </div>
         </div>
 
-        {/* Form Container */}
-        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
+        {/* Form Container - Simplified card, full width on mobile */}
+        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
           <div className="h-1 bg-gradient-to-r from-green-500 to-cyan-500"></div>
-          
-          <div className="p-5 sm:p-6">
+
+          <div className="p-3 sm:p-5 lg:p-6">
             <AnimatePresence mode="wait">
               {/* Step 1: Personal Information */}
               {currentStep === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }}>
-                  <h2 className="mb-6 flex items-center text-xl font-semibold text-gray-800">
-                    <User className="mr-3 text-green-500" size={24} /> Personal Information
+                  <h2 className="mb-4 flex items-center text-lg sm:text-xl font-semibold text-gray-800">
+                    <User className="mr-2 sm:mr-3 text-green-500 h-5 w-5 sm:h-6 sm:w-6" /> ব্যক্তিগত তথ্য
                   </h2>
-                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2 lg:gap-x-5 lg:gap-y-4">
                     {/* Member ID */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Member ID <span className="text-red-500">*</span></label>
-                      <div className="flex flex-col gap-2 sm:flex-row">
+                      <label className=" text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                        <IdCard size={16} className="text-blue-500" />
+                        Member ID <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
                         <input type="text" value={formData.membership.memberId}
-                          onChange={(e) => handleInputChange('membership.memberId', e.target.value.toUpperCase())}
-                          className={inputClass('membership.memberId')}
-                          placeholder={`e.g., ${memberIdPrefix}001`} />
-                        {memberSettings?.autoGenerateMemberId && (
-                          <button type="button" onClick={regenerateMemberId} className={`${secondaryButtonClass} sm:w-auto`}>Generate</button>
-                        )}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
+                            handleInputChange('membership.memberId', value);
+                            validateMemberId(value);
+                          }}
+                          onBlur={(e) => validateMemberId(e.target.value)}
+                          className={`${inputClass('membership.memberId')} pr-10`}
+                          placeholder="Enter unique Member ID (e.g., MEM001, M001)" maxLength={20} />
+                        {errors['membership.memberId'] ? (
+                          <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                        ) : formData.membership.memberId?.trim() ? (
+                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                        ) : null}
                       </div>
-                      {getError('membership.memberId') && <p className="text-xs text-red-500 mt-1">{getError('membership.memberId')}</p>}
+                      {getError('membership.memberId') && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} />{getError('membership.memberId')}</p>}
+                      <p className="text-xs text-gray-500 mt-1">আবশ্যক: এই সদস্যের অনন্য শনাক্তকারী। পরে পরিবর্তন করা যাবে না।</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Join Date <span className="text-red-500">*</span></label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Calendar size={14} className="text-blue-500" />
+                        Join Date <span className="text-red-500">*</span>
+                      </label>
                       <input type="date" value={formData.membership.dateOfJoin}
                         onChange={(e) => handleInputChange('membership.dateOfJoin', e.target.value)}
                         className={inputClass()} />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <User size={14} className="text-blue-500" />
+                        First Name <span className="text-red-500">*</span>
+                      </label>
                       <input type="text" value={formData.personal.firstName}
                         onChange={(e) => handleInputChange('personal.firstName', e.target.value)}
                         className={inputClass('personal.firstName')}
-                        placeholder="Enter first name" />
-                      {getError('personal.firstName') && <p className="text-xs text-red-500 mt-1">{getError('personal.firstName')}</p>}
+                        placeholder="প্রথম নাম লিখুন" />
+                      {getError('personal.firstName') && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} />{getError('personal.firstName')}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <User size={14} className="text-gray-400" />
+                        Middle Name
+                      </label>
                       <input type="text" value={formData.personal.middleName}
                         onChange={(e) => handleInputChange('personal.middleName', e.target.value)}
                         className={inputClass()}
-                        placeholder="Enter middle name" />
+                        placeholder="মধ্যের নাম (ঐচ্ছিক)" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name <span className="text-red-500">*</span></label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <User size={14} className="text-blue-500" />
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
                       <input type="text" value={formData.personal.lastName}
                         onChange={(e) => handleInputChange('personal.lastName', e.target.value)}
                         className={inputClass('personal.lastName')}
-                        placeholder="Enter last name" />
-                      {getError('personal.lastName') && <p className="text-xs text-red-500 mt-1">{getError('personal.lastName')}</p>}
+                        placeholder="উপনাম লিখুন" />
+                      {getError('personal.lastName') && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} />{getError('personal.lastName')}</p>}
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name (Auto-generated)</label>
-                      <div className={readOnlyClass}>{formData.personal.fullName || 'Full name will appear here'}</div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <User size={14} className="text-gray-400" />
+                        Full Name (Auto-generated)
+                      </label>
+                      <div className={readOnlyClass}>{formData.personal.fullName || 'পুরো নাম এখানে দেখাবে'}</div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span className="text-red-500">*</span></label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Phone size={14} className="text-blue-500" />
+                        Mobile Number <span className="text-red-500">*</span>
+                      </label>
                       <input type="tel" value={formData.personal.phone}
                         onChange={(e) => handleInputChange('personal.phone', e.target.value)}
                         className={inputClass('personal.phone')}
                         placeholder="01XXXXXXXXX" />
-                      {getError('personal.phone') && <p className="text-xs text-red-500 mt-1">{getError('personal.phone')}</p>}
+                      {getError('personal.phone') && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} />{getError('personal.phone')}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Alternate Phone</label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Phone size={14} className="text-gray-400" />
+                        Alternate Phone
+                      </label>
                       <input type="tel" value={formData.personal.alternatePhone}
                         onChange={(e) => handleInputChange('personal.alternatePhone', e.target.value)}
                         className={inputClass()}
-                        placeholder="Optional phone number" />
+                        placeholder="01XXXXXXXXX" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Mail size={14} className="text-gray-400" />
+                        Email Address
+                      </label>
                       <input type="email" value={formData.personal.email}
                         onChange={(e) => handleInputChange('personal.email', e.target.value)}
                         className={inputClass()}
@@ -465,24 +559,41 @@ const AddMember = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">NID Number</label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <IdCard size={14} className="text-gray-400" />
+                        NID Number
+                      </label>
                       <input type="text" value={formData.personal.nidNumber}
                         onChange={(e) => handleInputChange('personal.nidNumber', e.target.value)}
                         className={inputClass()}
-                        placeholder="Enter NID number" />
+                        placeholder="জাতীয় পরিচয়পত্র নম্বর" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth <span className="text-red-500">*</span></label>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Calendar size={14} className="text-blue-500" />
+                        Date of Birth <span className="text-red-500">*</span>
+                      </label>
                       <input type="date" value={formData.personal.dateOfBirth}
                         onChange={(e) => handleInputChange('personal.dateOfBirth', e.target.value)}
                         className={inputClass('personal.dateOfBirth')} />
-                      {getError('personal.dateOfBirth') && <p className="text-xs text-red-500 mt-1">{getError('personal.dateOfBirth')}</p>}
+                      {getError('personal.dateOfBirth') && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} />{getError('personal.dateOfBirth')}</p>}
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <User size={14} className="text-gray-400" />
+                        Occupation
+                      </label>
+                      <input type="text" value={formData.personal.occupation}
+                        onChange={(e) => handleInputChange('personal.occupation', e.target.value)}
+                        className={inputClass()}
+                        placeholder="পেশা/ব্যবসা লিখুন" />
                     </div>
 
                     {/* Profile Photo */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Profile Photo</label>
+                      <label className="text-sm font-medium text-gray-700 mb-1">Profile Photo</label>
                       <div className="flex flex-wrap items-center gap-4">
                         {photoPreview ? (
                           <div className="relative">
@@ -509,99 +620,179 @@ const AddMember = () => {
               {currentStep === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }}>
                   <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                    <Users className="mr-3 text-blue-500" size={24} /> Family & Membership
+                    <Users className="mr-3 text-blue-500" size={24} /> পরিবার ও সদস্যাত্ব
                   </h2>
                   <div className="space-y-6">
                     <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                      <h3 className="text-lg font-medium text-gray-800 mb-4">Family Information</h3>
+                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                        <Users size={20} className="text-blue-500" /> পরিবার संबंधিত তথ্য
+                      </h3>
                       <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name <span className="text-red-500">*</span></label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <User size={14} className="text-blue-500" />
+                            পিতার নাম <span className="text-red-500">*</span>
+                          </label>
                           <input type="text" value={formData.family.fatherName}
                             onChange={(e) => handleInputChange('family.fatherName', e.target.value)}
                             className={inputClass('family.fatherName')}
-                            placeholder="Enter father's name" />
-                          {getError('family.fatherName') && <p className="mt-1 text-xs text-red-500">{getError('family.fatherName')}</p>}
+                            placeholder="পিতার নাম লিখুন" />
+                          {getError('family.fatherName') && <p className="mt-1 text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{getError('family.fatherName')}</p>}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Name <span className="text-red-500">*</span></label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <User size={14} className="text-blue-500" />
+                            মাতার নাম <span className="text-red-500">*</span>
+                          </label>
                           <input type="text" value={formData.family.motherName}
                             onChange={(e) => handleInputChange('family.motherName', e.target.value)}
                             className={inputClass('family.motherName')}
-                            placeholder="Enter mother's name" />
-                          {getError('family.motherName') && <p className="mt-1 text-xs text-red-500">{getError('family.motherName')}</p>}
+                            placeholder="মাতার নাম লিখুন" />
+                          {getError('family.motherName') && <p className="mt-1 text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{getError('family.motherName')}</p>}
                         </div>
                       </div>
                     </div>
 
                     {/* Nominee */}
                     <div className="rounded-xl border border-pink-200 bg-gradient-to-r from-pink-50 to-red-50 p-4">
-                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center"><Heart className="mr-2 text-pink-500" size={20} /> Nominee</h3>
+                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center"><Heart className="mr-2 text-pink-500" size={20} /> মনোনীত ব্যক্তি (Nominee)</h3>
                       <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <User size={14} className="text-pink-500" />
+                            মনোনীত ব্যক্তির নাম
+                          </label>
                           <input type="text" value={formData.family.nominee.name}
                             onChange={(e) => handleInputChange('family.nominee.name', e.target.value)}
                             className={inputClass()}
-                            placeholder="Enter nominee name" />
+                            placeholder="মনোনীত ব্যক্তির নাম লিখুন" />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Relation</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Heart size={14} className="text-pink-500" />
+                            সম্পর্ক
+                          </label>
                           <select value={formData.family.nominee.relation}
                             onChange={(e) => handleInputChange('family.nominee.relation', e.target.value)}
                             className={inputClass()}>
-                            <option value="">Select</option>
-                            <option value="Son">Son</option><option value="Daughter">Daughter</option>
-                            <option value="Wife">Wife</option><option value="Husband">Husband</option>
-                            <option value="Father">Father</option><option value="Mother">Mother</option>
+                            <option value="">নির্বাচন করুন</option>
+                            <option value="Son">পুত্র</option><option value="Daughter">পুত্রী</option>
+                            <option value="Wife">স্ত্রী</option><option value="Husband">স্বামী</option>
+                            <option value="Father">পিতা</option><option value="Mother">মাতা</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Phone</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Phone size={14} className="text-pink-500" />
+                            মনোনীত ব্যক্তির ফোন
+                          </label>
                           <input type="tel" value={formData.family.nominee.phone}
                             onChange={(e) => handleInputChange('family.nominee.phone', e.target.value)}
                             className={inputClass()}
-                            placeholder="Enter nominee phone" />
+                            placeholder="মনোনীত ব্যক্তির ফোন নম্বর" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Emergency Contact */}
+                    <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center"><Phone className="mr-2 text-amber-500" size={20} /> জরুরি যোগাযোগ (Emergency Contact)</h3>
+                      <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-3">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <User size={14} className="text-amber-500" />
+                            নাম
+                          </label>
+                          <input type="text" value={formData.emergencyContact.name}
+                            onChange={(e) => handleInputChange('emergencyContact.name', e.target.value)}
+                            className={inputClass()}
+                            placeholder="জরুরি যোগাযোগের ব্যক্তির নাম" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Phone size={14} className="text-amber-500" />
+                            ফোন নম্বর
+                          </label>
+                          <input type="tel" value={formData.emergencyContact.phone}
+                            onChange={(e) => handleInputChange('emergencyContact.phone', e.target.value)}
+                            className={inputClass()}
+                            placeholder="ফোন নম্বর" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Heart size={14} className="text-amber-500" />
+                            সম্পর্ক
+                          </label>
+                          <select value={formData.emergencyContact.relation}
+                            onChange={(e) => handleInputChange('emergencyContact.relation', e.target.value)}
+                            className={inputClass()}>
+                            <option value="">নির্বাচন করুন</option>
+                            <option value="Spouse">স্ত্রী/স্বামী</option>
+                            <option value="Father">পিতা</option>
+                            <option value="Mother">মাতা</option>
+                            <option value="Sibling">ভাই/বোন</option>
+                            <option value="Child">পুত্র/পুত্রী</option>
+                            <option value="Friend">বন্ধু</option>
+                            <option value="Other">অন্যান্য</option>
+                          </select>
                         </div>
                       </div>
                     </div>
 
                     {/* Membership */}
                     <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                      <h3 className="text-lg font-medium text-gray-800 mb-4">Membership</h3>
+                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                        <CreditCard size={20} className="text-green-500" /> সদস্যাত্ব বিবরণ
+                      </h3>
                       <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Share Count (Min: {minShare}, Max: {maxShare})</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <CreditCard size={14} className="text-blue-500" />
+                            শেয়ার সংখ্যা (ন্যূনতম: {minShare}, সর্বোচ্চ: {maxShare})
+                          </label>
                           <select value={formData.membership.shareCount}
                             onChange={(e) => handleInputChange('membership.shareCount', parseInt(e.target.value))}
                             className={inputClass('membership.shareCount')}>
-                            {Array.from({ length: Math.min(maxShare, 20) }, (_, i) => i + minShare).map(n => <option key={n} value={n}>{n} Share{n > 1 ? 's' : ''}</option>)}
+                            {Array.from({ length: Math.min(maxShare, 20) }, (_, i) => i + minShare).map(n => <option key={n} value={n}>{n} শেয়ার</option>)}
                           </select>
+                          {getError('membership.shareCount') && <p className="mt-1 text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{getError('membership.shareCount')}</p>}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Per Share Fee (৳)</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <CreditCard size={14} className="text-gray-400" />
+                            প্রতি শেয়ার ফি (৳)
+                          </label>
                           <div className={readOnlyClass}>৳{perShareValue}</div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Fee (৳)</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <CreditCard size={14} className="text-green-500" />
+                            মাসিক ফি (৳)
+                          </label>
                           <div className="block min-h-[42px] w-full rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm font-medium text-green-700 shadow-sm">৳{formData.membership.monthlyFee}</div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Member Role</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Shield size={14} className="text-gray-400" />
+                            সদস্যের ভূমিকা
+                          </label>
                           <select value={formData.membership.role}
                             onChange={(e) => handleInputChange('membership.role', e.target.value as UserRole)}
                             className={inputClass()}>
-                            <option value="admin">Admin</option><option value="president">President</option>
-                            <option value="manager">Manager</option><option value="accountant">Accountant</option>
-                            <option value="cashier">Cashier</option><option value="member">Member</option>
+                            <option value="admin">অ্যাডমিন</option><option value="president">প্রেসিডেন্ট</option>
+                            <option value="manager">ম্যানেজার</option><option value="accountant">অ্যাকাউন্ট্যান্ট</option>
+                            <option value="cashier">ক্যাশিয়ার</option><option value="member">সদস্য</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <Shield size={14} className="text-gray-400" />
+                            পদবী
+                          </label>
                           <input type="text" value={formData.membership.position}
                             onChange={(e) => handleInputChange('membership.position', e.target.value)}
                             className={inputClass()}
-                            placeholder="Enter position" />
+                            placeholder="পদবী লিখুন" />
                         </div>
                       </div>
                     </div>
@@ -612,40 +803,50 @@ const AddMember = () => {
               {/* Step 3: Address & Documents */}
               {currentStep === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.3 }}>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center"><Home className="mr-3 text-purple-500" size={24} /> Address & Documents</h2>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center"><Home className="mr-3 text-purple-500" size={24} /> ঠিকানা ও নথি</h2>
                   <div className="space-y-6">
                     <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                      <h3 className="text-lg font-medium text-gray-800 mb-4">Address</h3>
+                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                        <MapPin size={20} className="text-purple-500" /> ঠিকানা
+                      </h3>
                       <AddressSelect value={{ division: formData.address.division, district: formData.address.district, upazila: formData.address.upazila, union: formData.address.union, village: formData.address.village }}
                         onChange={handleAddressChange} errors={{ division: errors['address.division'], district: errors['address.district'] }} />
                       <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Present Address <span className="text-red-500">*</span></label>
+                        <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                          <MapPin size={14} className="text-blue-500" />
+                          বর্তমান ঠিকানা <span className="text-red-500">*</span>
+                        </label>
                         <textarea value={formData.address.presentAddress}
                           onChange={(e) => handleInputChange('address.presentAddress', e.target.value)} rows={2}
                           className={inputClass('address.presentAddress')}
-                          placeholder="Enter present address" />
-                        {getError('address.presentAddress') && <p className="mt-1 text-xs text-red-500">{getError('address.presentAddress')}</p>}
+                          placeholder="বর্তমান ঠিকানা লিখুন" />
+                        {getError('address.presentAddress') && <p className="mt-1 text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{getError('address.presentAddress')}</p>}
                       </div>
                       <div className="mt-4 flex items-center gap-2">
                         <input type="checkbox" id="sameAsPresent" checked={formData.address.sameAsPresent}
                           onChange={(e) => handleInputChange('address.sameAsPresent', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                        <label htmlFor="sameAsPresent" className="text-sm text-gray-600">Same as present address</label>
+                        <label htmlFor="sameAsPresent" className="text-sm text-gray-600">স্থায়ী ঠিকানা বর্তমান ঠিকানার মতোই</label>
                       </div>
                       {!formData.address.sameAsPresent && (
                         <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Permanent Address</label>
+                          <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                            <MapPin size={14} className="text-gray-400" />
+                            স্থায়ী ঠিকানা
+                          </label>
                           <textarea value={formData.address.permanentAddress}
                             onChange={(e) => handleInputChange('address.permanentAddress', e.target.value)} rows={2}
                             className={inputClass('address.permanentAddress')}
-                            placeholder="Enter permanent address" />
-                          {getError('address.permanentAddress') && <p className="mt-1 text-xs text-red-500">{getError('address.permanentAddress')}</p>}
+                            placeholder="স্থায়ী ঠিকানা লিখুন" />
+                          {getError('address.permanentAddress') && <p className="mt-1 text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{getError('address.permanentAddress')}</p>}
                         </div>
                       )}
                     </div>
 
                     {/* Signature */}
                     <div className="border-t pt-6">
-                      <h3 className="text-lg font-medium text-gray-800 mb-4">Signature</h3>
+                      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                        <FileText size={20} className="text-purple-500" /> স্বাক্ষর
+                      </h3>
                       <div className="flex flex-wrap items-center gap-4">
                         {signaturePreview ? (
                           <div className="relative">
@@ -656,7 +857,7 @@ const AddMember = () => {
                           <div className="w-24 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"><FileText size={20} className="text-gray-400" /></div>
                         )}
                         <label className="inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700 active:scale-[0.98]">
-                          <Upload size={14} className="mr-2" /> Upload Signature
+                          <Upload size={14} className="mr-2" /> স্বাক্ষর আপলোড করুন
                           <input type="file" accept="image/*" onChange={handleSignatureUpload} className="hidden" />
                         </label>
                       </div>
@@ -664,12 +865,14 @@ const AddMember = () => {
 
                     {/* Summary */}
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-medium text-green-800 mb-2">Registration Summary</h4>
+                      <h4 className="font-medium text-green-800 mb-2">নিবন্ধন সারসংক্ষেপ</h4>
                       <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div><span className="text-gray-600">Member ID:</span> <span className="ml-2 font-medium">{formData.membership.memberId}</span></div>
-                        <div><span className="text-gray-600">Name:</span> <span className="ml-2 font-medium">{formData.personal.fullName}</span></div>
-                        <div><span className="text-gray-600">Phone:</span> <span className="ml-2 font-medium">{formData.personal.phone}</span></div>
-                        <div><span className="text-gray-600">Monthly Fee:</span> <span className="ml-2 font-medium">৳{formData.membership.monthlyFee}</span></div>
+                        <div><span className="text-gray-600">সদস্য আইডি:</span> <span className="ml-2 font-medium">{formData.membership.memberId}</span></div>
+                        <div><span className="text-gray-600">নাম:</span> <span className="ml-2 font-medium">{formData.personal.fullName}</span></div>
+                        <div><span className="text-gray-600">ফোন:</span> <span className="ml-2 font-medium">{formData.personal.phone}</span></div>
+                        <div><span className="text-gray-600">পেশা:</span> <span className="ml-2 font-medium">{formData.personal.occupation || '-'}</span></div>
+                        <div><span className="text-gray-600">জরুরি যোগাযোগ:</span> <span className="ml-2 font-medium">{formData.emergencyContact.name || '-'}</span></div>
+                        <div><span className="text-gray-600">মাসিক ফি:</span> <span className="ml-2 font-medium">৳{formData.membership.monthlyFee}</span></div>
                       </div>
                     </div>
                   </div>
@@ -677,22 +880,43 @@ const AddMember = () => {
               )}
             </AnimatePresence>
 
-            {/* Navigation */}
-            <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={prevStep} disabled={currentStep === 1}
-                className={secondaryButtonClass}>
-                <ArrowLeft size={16} /> Previous
+            {/* Navigation - Mobile: Full width stacked; Desktop: Inline */}
+            <div className="mt-6 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              {/* Previous/Cancel Button - Step 1: Cancel, Steps 2-3: Previous */}
+              <button
+                type="button"
+                onClick={currentStep === 1 ? () => navigate('/members') : prevStep}
+                disabled={currentStep === 1 ? false : currentStep === 1}
+                className={secondaryButtonClass + ' w-full sm:w-auto'}
+              >
+                {currentStep === 1 ? (
+                  <> <X size={16} className="mr-1" /> বাতিল </>
+                ) : (
+                  <> <ArrowLeft size={16} /> পেছনে </>
+                )}
               </button>
-              <div className="flex flex-wrap items-center justify-end gap-3">
-                <button type="button" onClick={() => navigate('/members/index')} className={secondaryButtonClass}>Cancel</button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 {currentStep < steps.length ? (
-                  <button type="button" onClick={nextStep} className={primaryButtonClass}>
-                    Next <ArrowRight size={16} />
+                  <button type="button" onClick={nextStep} className={primaryButtonClass + ' w-full sm:w-auto'}>
+                    {currentStep === 3 ? (
+                      <> <Save size={16} className="mr-2" /> নিবন্ধন সম্পন্ন করুন </>
+                    ) : (
+                      <> পরবর্তী <ArrowRight size={16} /> </>
+                    )}
                   </button>
                 ) : (
-                  <button type="button" onClick={handleSubmit} disabled={loading}
-                    className={primaryButtonClass}>
-                    {loading ? <><Loader2 size={14} className="animate-spin mr-2" /> Saving...</> : <><Save size={16} className="mr-2" /> Complete Registration</>}
+                  <button type="button" onClick={handleSubmit} disabled={loading} className={primaryButtonClass + ' w-full sm:w-auto'}>
+                    {loading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin mr-2" />
+                        সংরক্ষণ করা হচ্ছে...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} className="mr-2" />
+                        নিবন্ধন সম্পন্ন করুন
+                      </>
+                    )}
                   </button>
                 )}
               </div>

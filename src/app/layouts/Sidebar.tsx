@@ -1,7 +1,7 @@
 // src/app/layouts/Sidebar.tsx
-// অ্যাপের বাম পাশের নেভিগেশন মেনু
+// অ্যাপের বাম পক্ষের নেভিগেশন মেনু — কম্প্যাক্ট, পরিষ্কার, মোবাইলে চাইড-নেভ ক্লিকে অটো-বন্ধ
 
-import { cloneElement, useEffect, useMemo, useState } from "react";
+import { cloneElement, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Banknote,
@@ -30,13 +30,11 @@ import { useAuth } from "../providers/AuthProvider";
 import { menuConfig } from "../../navigation/menuConfig";
 import type { UserRole } from "../../types";
 
-// ===== প্রপস টাইপ =====
 interface SidebarProps {
-  isOpen?: boolean;        // সাইডবার খোলা থাকবে কিনা (প্যারেন্ট থেকে)
-  toggleSidebar?: () => void; // সাইডবার বন্ধ করার ফাংশন (মোবাইলে)
+  isOpen?: boolean;
+  toggleSidebar?: () => void;
 }
 
-// ===== মেনু আইটেম টাইপ =====
 interface MenuItemType {
   key?: string;
   name?: string;
@@ -47,7 +45,6 @@ interface MenuItemType {
   children?: MenuItemType[];
 }
 
-// ===== আইকন কম্পোনেন্ট =====
 const getIconComponent = (iconName: string, size = 20) => {
   const icons: Record<string, React.ReactElement> = {
     activity: <TrendingUp size={size} />,
@@ -83,7 +80,6 @@ const getIconComponent = (iconName: string, size = 20) => {
   return icons[iconName] || <Home size={20} />;
 };
 
-// ===== মেনু টোন (রং) =====
 const getMenuTone = (item: MenuItemType): string => {
   const value = `${item.key || ""} ${item.name || ""} ${item.label || ""} ${item.icon || ""}`.toLowerCase();
   if (value.includes("member") || value.includes("user")) return "text-cyan-300";
@@ -100,7 +96,6 @@ const getMenuTone = (item: MenuItemType): string => {
   return "text-emerald-300";
 };
 
-// ===== আইকনে ক্লাস যোগ করা =====
 const withIconClass = (icon: React.ReactElement<{ className?: string }>, className: string) => {
   const currentClass = icon.props.className || "";
   return cloneElement(icon, {
@@ -108,7 +103,6 @@ const withIconClass = (icon: React.ReactElement<{ className?: string }>, classNa
   });
 };
 
-// ===== ড্যাশবোর্ড পাথ =====
 const getDashboardPath = (role: string | null, isSuperAdmin: boolean): string => {
   if (isSuperAdmin) return "/super-admin";
   switch (role) {
@@ -135,29 +129,38 @@ const getDashboardLabel = (role: string | null, isSuperAdmin: boolean): string =
   }
 };
 
-// ===== মেইন কম্পোনেন্ট =====
-export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) {
-  // ===== স্টেট =====
+const Sidebar = ({ isOpen = true, toggleSidebar }: SidebarProps) => {
   const [expanded, setExpanded] = useState<string | null>(null);
   const location = useLocation();
   const { userData, currentMember, logout, isSuperAdmin, user } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-  // ===== উইন্ডো রিসাইজ হ্যান্ডলার =====
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ===== ইউজার রোল =====
+  // Close sidebar on mobile ONLY when route actually changes (not when hamburger opens it)
+  const prevIsOpenRef = useRef(isOpen);
+  useEffect(() => {
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isMobile || !isOpen) return;
+    const wasOpenBefore = prevIsOpenRef.current;
+    // If we're still open but pathname changed (navigation), auto-close
+    if (wasOpenBefore === isOpen && isOpen) {
+      const timer = setTimeout(() => toggleSidebar?.(), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, isMobile]);
+
   const currentUserRole = user?.role || (isSuperAdmin ? "super_admin" : null);
   const dashboardPath = getDashboardPath(currentUserRole, isSuperAdmin);
   const dashboardLabel = getDashboardLabel(currentUserRole, isSuperAdmin);
 
-  // ===== মেনু ফিল্টার (রোল অনুযায়ী) =====
   const menuItems = useMemo(() => {
     const filterMenuByRole = (items: MenuItemType[]): MenuItemType[] => {
       if (!currentUserRole) return [];
@@ -176,7 +179,6 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
     return filterMenuByRole(menuConfig as MenuItemType[]);
   }, [currentUserRole, isSuperAdmin]);
 
-  // ===== অ্যাক্টিভ মেনু এক্সপ্যান্ড =====
   useEffect(() => {
     const activeParent = menuItems.find((item) =>
       item.children?.some((child) => child.path && location.pathname.startsWith(child.path))
@@ -186,12 +188,10 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
     }
   }, [location.pathname, menuItems]);
 
-  // ===== এক্সপ্যান্ড টগল =====
   const toggleExpand = (key: string) => {
     setExpanded((current) => (current === key ? null : key));
   };
 
-  // ===== লগআউট =====
   const handleLogout = async () => {
     try {
       await logout();
@@ -200,7 +200,6 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
     }
   };
 
-  // ===== হেল্পার ফাংশন =====
   const getMenuItemName = (item: MenuItemType): string => item.label || item.name || "";
   const getMenuItemIcon = (item: MenuItemType): React.ReactElement => {
     if (typeof item.icon === "string") return getIconComponent(item.icon);
@@ -214,7 +213,6 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  // ===== লোডিং স্টেট =====
   if (!currentUserRole || !userData) {
     return (
       <aside className="flex h-screen w-16 shrink-0 items-center justify-center bg-[#1E3A3A] text-white">
@@ -228,19 +226,17 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
   return (
     <motion.aside
       layout
-      animate={{ 
-        width: isOpen ? 240 : (isMobile ? 0 : 72) 
-      }}
+      animate={{ width: isOpen ? 240 : (isMobile ? 0 : 72) }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
       className={`
-        relative flex h-screen flex-col overflow-hidden 
+        relative flex h-screen flex-col overflow-hidden
         bg-gradient-to-b from-[#1E3A3A] to-[#0F2A2A] text-white shadow-xl
         ${isMobile && !isOpen ? 'w-0' : ''}
         lg:flex
       `}
     >
-      {/* ===== হেডার ===== */}
-      <div className={`flex items-center px-3 py-4 ${isOpen ? "justify-between" : "justify-center"}`}>
+      {/* ===== Header ===== */}
+      <div className={`flex items-center px-3 py-3 ${isOpen ? "justify-between" : "justify-center"}`}>
         <AnimatePresence mode="wait">
           {isOpen ? (
             <motion.div
@@ -251,19 +247,19 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
               transition={{ duration: 0.18 }}
               className="flex min-w-0 flex-1 items-center gap-2"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/10">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10 ring-1 ring-white/10">
                 {profilePhoto ? (
                   <img src={profilePhoto} alt={userData.fullName} className="h-full w-full object-cover" />
                 ) : isSuperAdminUser ? (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600">
-                    <Shield size={20} />
+                    <Shield size={18} />
                   </div>
                 ) : null}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-semibold leading-5">{userData.fullName}</p>
+                <p className="truncate text-[13px] font-semibold leading-5">{userData.fullName}</p>
                 {getMemberId() && (
-                  <p className="truncate text-[11px] leading-4 text-emerald-300">{getMemberId()}</p>
+                  <p className="truncate text-[10px] leading-4 text-emerald-300">{getMemberId()}</p>
                 )}
               </div>
             </motion.div>
@@ -272,42 +268,34 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
           )}
         </AnimatePresence>
 
-        {/* ===== টগল বাটন ===== */}
         <button
           type="button"
-          onClick={() => {
-            if (toggleSidebar) {
-              toggleSidebar(); // মোবাইলে প্যারেন্টের ফাংশন কল
-            } else {
-              // ডেস্কটপে লোকাল স্টেট টগল (ব্যাকওয়ার্ড কম্প্যাটিবিলিটি)
-              // এইখানে তোমার ইচ্ছামতো করতে পারো
-            }
-          }}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+          onClick={() => toggleSidebar?.()}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
           aria-label="Toggle sidebar"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
       </div>
 
-      {/* ===== ড্যাশবোর্ড লিংক ===== */}
+      {/* ===== Dashboard link ===== */}
       <div className="px-3 pb-2 pt-1">
         <Link
           to={dashboardPath}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
             isActive(dashboardPath) ? "bg-emerald-600 text-white shadow-lg" : "text-gray-300 hover:bg-white/10"
           }`}
         >
-          <LayoutDashboard size={20} className={`shrink-0 ${isActive(dashboardPath) ? "text-white" : "text-emerald-300"}`} />
-          {isOpen && <span className="truncate text-[14px] font-semibold">{dashboardLabel}</span>}
+          <LayoutDashboard size={18} className={`shrink-0 ${isActive(dashboardPath) ? "text-white" : "text-emerald-300"}`} />
+          {isOpen && <span className="truncate text-[13px] font-semibold">{dashboardLabel}</span>}
         </Link>
       </div>
 
       <div className="mx-3 h-px bg-white/10" />
 
-      {/* ===== নেভিগেশন মেনু ===== */}
-      <nav className={`min-h-0 flex-1 overflow-y-auto px-2 py-3 ${!isOpen ? 'scrollbar-hide' : ''}`}>
-        <div className="space-y-1">
+      {/* ===== Navigation menu ===== */}
+      <nav className={`min-h-0 flex-1 overflow-y-auto px-2 py-2 ${!isOpen ? 'scrollbar-hide' : ''}`}>
+        <div className="space-y-0.5">
           {menuItems.map((item) => {
             const itemKey = item.key || getMenuItemName(item);
             const itemExpanded = expanded === itemKey;
@@ -317,12 +305,11 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
             if (hasChildren) {
               return (
                 <div key={itemKey} className="sidebar-menu-group">
-                  <motion.button
-                    whileHover={{ x: 2 }}
-                    whileTap={{ scale: 0.98 }}
+                  {/* Parent module button — expand/collapse ONLY, does NOT close sidebar */}
+                  <button
                     type="button"
                     onClick={() => toggleExpand(itemKey)}
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 transition-all duration-200 ${
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 transition-colors ${
                       itemExpanded ? "bg-white/10 text-white" : "text-gray-300 hover:bg-white/10"
                     }`}
                     title={!isOpen ? itemName : undefined}
@@ -331,14 +318,14 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
                       <span className={`shrink-0 ${getMenuTone(item)}`}>
                         {withIconClass(getMenuItemIcon(item), "shrink-0")}
                       </span>
-                      {isOpen && <span className="truncate text-[14px] font-semibold">{itemName}</span>}
+                      {isOpen && <span className="truncate text-[13px] font-semibold">{itemName}</span>}
                     </span>
                     {isOpen && (
-                      <span className="ml-1 shrink-0 text-gray-300">
-                        {itemExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      <span className="ml-1 shrink-0 text-gray-400">
+                        {itemExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </span>
                     )}
-                  </motion.button>
+                  </button>
 
                   <AnimatePresence initial={false}>
                     {itemExpanded && isOpen && (
@@ -349,29 +336,29 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
                         transition={{ duration: 0.18 }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-1 ml-8 pl-3 border-l border-white/15">
+                        <div className="mt-1 ml-7 pl-3 border-l border-white/15">
                           <div className="space-y-0.5">
                             {item.children?.map((child) => {
                               const childPath = child.path || "#";
                               const childActive = isActive(childPath);
                               return (
-                                <motion.div key={child.key || child.label || child.name} whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
+                                <div key={child.key || child.label || child.name}>
                                   <Link
                                     to={childPath}
-                                    className={`relative block rounded-md px-3 py-1.5 text-[13px] font-medium leading-5 transition-all duration-200 ${
+                                    className={`relative block rounded-md px-3 py-1.5 text-[12px] font-medium leading-5 transition-all duration-200 ${
                                       childActive
                                         ? "bg-emerald-500/20 text-white"
                                         : "text-gray-400 hover:bg-white/5 hover:text-white"
                                     }`}
                                   >
                                     <span
-                                      className={`absolute -left-2.5 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full ${
+                                      className={`absolute -left-2 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full ${
                                         childActive ? "bg-emerald-300" : "bg-white/30"
                                       }`}
                                     />
                                     <span className="block truncate">{child.label || child.name}</span>
                                   </Link>
-                                </motion.div>
+                                </div>
                               );
                             })}
                           </div>
@@ -385,53 +372,49 @@ export default function Sidebar({ isOpen = true, toggleSidebar }: SidebarProps) 
 
             return (
               <div key={itemKey} className="sidebar-menu-group">
-                <motion.div whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
-                  <Link
-                    to={item.path || "#"}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 ${
-                      isActive(item.path || "") ? "bg-emerald-600 text-white shadow-lg" : "text-gray-300 hover:bg-white/10"
-                    }`}
-                    title={!isOpen ? itemName : undefined}
-                  >
-                    <span className={`shrink-0 ${isActive(item.path || "") ? "text-white" : getMenuTone(item)}`}>
-                      {withIconClass(getMenuItemIcon(item), "shrink-0")}
-                    </span>
-                    {isOpen && <span className="truncate text-[14px] font-semibold">{itemName}</span>}
-                  </Link>
-                </motion.div>
+                <Link
+                  to={item.path || "#"}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+                    isActive(item.path || "") ? "bg-emerald-600 text-white shadow-lg" : "text-gray-300 hover:bg-white/10"
+                  }`}
+                  title={!isOpen ? itemName : undefined}
+                >
+                  <span className={`shrink-0 ${isActive(item.path || "") ? "text-white" : getMenuTone(item)}`}>
+                    {withIconClass(getMenuItemIcon(item), "shrink-0")}
+                  </span>
+                  {isOpen && <span className="truncate text-[13px] font-semibold">{itemName}</span>}
+                </Link>
               </div>
             );
           })}
         </div>
       </nav>
 
-      {/* ===== ফুটার (লগআউট) ===== */}
+      {/* ===== Footer ===== */}
       <div className="mt-auto border-t border-white/10 bg-[#0F2A2A]/40 px-3 pb-3 pt-2">
-        <div className="space-y-1">
-          <motion.div whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
-            <Link
-              to="/my-profile"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 ${
-                isActive("/my-profile") ? "bg-emerald-600 text-white" : "text-gray-300 hover:bg-white/10"
-              }`}
-            >
-              <User size={18} className="shrink-0" />
-              {isOpen && <span className="truncate text-[14px] font-semibold">My Profile</span>}
-            </Link>
-          </motion.div>
+        <div className="space-y-0.5">
+          <Link
+            to="/my-profile"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+              isActive("/my-profile") ? "bg-emerald-600 text-white" : "text-gray-300 hover:bg-white/10"
+            }`}
+          >
+            <User size={16} className="shrink-0" />
+            {isOpen && <span className="truncate text-[13px] font-semibold">My Profile</span>}
+          </Link>
 
-          <motion.button
-            whileHover={{ x: 2 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-red-300 transition-all duration-200 hover:bg-red-600/20 hover:text-red-200"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-red-300 transition-colors hover:bg-red-600/20 hover:text-red-200"
           >
-            <LogOut size={18} className="shrink-0" />
-            {isOpen && <span className="truncate text-[14px] font-semibold">Logout</span>}
-          </motion.button>
+            <LogOut size={16} className="shrink-0" />
+            {isOpen && <span className="truncate text-[13px] font-semibold">Logout</span>}
+          </button>
         </div>
       </div>
     </motion.aside>
   );
-}
+};
+
+export default Sidebar;
